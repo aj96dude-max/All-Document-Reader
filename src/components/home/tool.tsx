@@ -1,4 +1,4 @@
-import { Button, Image, Pressable } from "react-native";
+import { Image, Pressable } from "react-native";
 import { StyleSheet, Text, View } from "react-native";
 
 type ToolProp = {

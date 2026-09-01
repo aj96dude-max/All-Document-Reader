@@ -35,6 +35,7 @@ const App = () => {
           name="Favorite"
           component={FavoriteScreen}
           options={{
+            header: () => (<CustomHeader title='Favorites' />),
             tabBarIcon: ({ size, focused }) => (
               <Image
                 source={ focused ? require('../Assets/tabs/favorite-active.png') : require('../Assets/tabs/favorite.png')}
@@ -47,6 +48,7 @@ const App = () => {
           name="Setting"
           component={SettingScreen}
           options={{
+            header: () => (<CustomHeader title='Settings' />),
             tabBarIcon: ({ size, focused }) => (
               <Image
                 source={ focused ? require('../Assets/tabs/settings-active.png') : require('../Assets/tabs/settings.png')}

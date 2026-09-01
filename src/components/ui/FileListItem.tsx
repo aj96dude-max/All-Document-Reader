@@ -72,9 +72,10 @@ const styles = StyleSheet.create({
   },
 
   icon: {
-    width: 22,
-    height: 22,
+    width: 52,
+    height: 52,
     resizeMode: "contain",
+    borderRadius: 100,
   },
 
   details: {

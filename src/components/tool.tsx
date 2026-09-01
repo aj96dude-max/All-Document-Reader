@@ -1,0 +1,42 @@
+import { Button, Image, Pressable } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+
+type ToolProp = {
+  title: string;
+  icon: any;
+};
+
+const Tool = ({ title, icon }: ToolProp) => {
+  return (
+    <Pressable style={styles.container}>
+      <View style={styles.iconPlaceHolder}>
+        <Image source={icon} style={styles.image} />
+      </View>
+      <Text style={styles.title}>{title}</Text>
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: 90,
+    height: 90,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  iconPlaceHolder: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  title: {
+    fontSize: 12,
+  },
+});
+export default Tool;

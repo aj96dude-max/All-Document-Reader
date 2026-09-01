@@ -1,14 +1,62 @@
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
 import React from 'react';
-import { Text, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import HomeScreen from './screens/HomeScreen';
+import FavoriteScreen from './screens/FavoriteScreen';
+import SettingScreen from './screens/SettingScreen';
+import { Image } from 'react-native';
+import CustomHeader from './components/CustomHeader';
+
+const Tab = createBottomTabNavigator();
 
 const App = () => {
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={{flex: 1}}>
-        <Text>Hello, World!</Text>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <NavigationContainer>
+      <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: "#ED1C24",
+        tabBarInactiveTintColor: "#A7A7A7",
+      }}
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            header: () => (<CustomHeader title='All Document Reader' />),
+            tabBarIcon: ({ size, focused }) => (
+              <Image
+                source={ focused ? require('../Assets/tabs/home-active.png') : require('../Assets/tabs/home.png')}
+                style={{ width: size, height: size }}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Favorite"
+          component={FavoriteScreen}
+          options={{
+            tabBarIcon: ({ size, focused }) => (
+              <Image
+                source={ focused ? require('../Assets/tabs/favorite-active.png') : require('../Assets/tabs/favorite.png')}
+                style={{ width: size, height: size }}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Setting"
+          component={SettingScreen}
+          options={{
+            tabBarIcon: ({ size, focused }) => (
+              <Image
+                source={ focused ? require('../Assets/tabs/settings-active.png') : require('../Assets/tabs/settings.png')}
+                style={{ width: size, height: size }}
+              />
+            ),
+          }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 };
 

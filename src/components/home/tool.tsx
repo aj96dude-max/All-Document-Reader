@@ -4,11 +4,12 @@ import { StyleSheet, Text, View } from "react-native";
 type ToolProp = {
   title: string;
   icon: any;
+  onPress: () => void;
 };
 
-const Tool = ({ title, icon }: ToolProp) => {
+const Tool = ({ title, icon, onPress }: ToolProp) => {
   return (
-    <Pressable style={styles.container}>
+    <Pressable style={styles.container} onPress={onPress}>
       <View style={styles.iconPlaceHolder}>
         <Image source={icon} style={styles.image} />
       </View>

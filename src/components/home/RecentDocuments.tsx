@@ -7,10 +7,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import EmptyDocState from './EmptyDocState';
 
 const RecentDocuments = () => {
   const [isSearchActive, setIsSearchActive] = useState(false);
-  const [search, setSearch] = useState('');
+  const [isRecentFilesFound, setIsRecentFilesFound] = useState(false);
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
@@ -31,6 +32,10 @@ const RecentDocuments = () => {
           </Pressable>
         </View>
       </View>
+
+      {!isRecentFilesFound && (
+        <EmptyDocState />
+      )}
     </View>
   );
 };

@@ -8,6 +8,7 @@ import SettingScreen from './screens/SettingScreen';
 import FileListScreen from './screens/FileListScreen';
 import { Image } from 'react-native';
 import CustomHeader from './components/CustomHeader';
+import FileListHeader from './components/FileListHeader';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -72,8 +73,7 @@ const App = () => {
           name="FileList" 
           component={FileListScreen} 
           options={({ route }: any) => ({
-            headerShown: true,
-            header: () => (<CustomHeader title={route.params?.fileType ? `Files: ${route.params.fileType.toUpperCase()}` : 'Files'} />)
+            headerShown: false,
           })}
         />
       </Stack.Navigator>

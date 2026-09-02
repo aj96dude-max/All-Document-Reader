@@ -2,24 +2,16 @@ import React from 'react';
 
 import { StyleSheet, Text, View } from 'react-native';
 import Pdf from 'react-native-pdf';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/types';
 
-type DocumentViewerScreenProps = {
-  name: string;
-  type: string;
-  uri: string;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'FileViewer'>;
 
-const DocumentViewerScreen = ({
-  route,
-  navigation,
-}: {
-  route: any;
-  navigation: any;
-}) => {
+const DocumentViewerScreen = ({ route }: Props) => {
   const { file } = route.params;
 
-  const isPdf = file.type === 'application/pdf';
-  const isText = file.type === 'text/plain';
+  const isPdf = file.mimeType === 'application/pdf';
+  const isText = file.mimeType === 'text/plain';
 
   return (
     <View style={styles.container}>
@@ -30,7 +22,20 @@ const DocumentViewerScreen = ({
       </View>
 
       {isPdf && <Pdf source={{ uri: file.uri }} style={styles.pdf} />}
-      {isText && <Text>{file.content}</Text>}
+      {isText && (
+        <View style={styles.textContainer}>
+          <Text style={styles.placeholder}>
+            Text file viewer coming soon.
+          </Text>
+        </View>
+      )}
+      {!isPdf && !isText && (
+        <View style={styles.textContainer}>
+          <Text style={styles.placeholder}>
+            This file format is not supported for viewing yet.
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -55,6 +60,19 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
+
+  textContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+
+  placeholder: {
+    fontSize: 14,
+    color: '#999',
+  },
 });
 
 export default DocumentViewerScreen;
+

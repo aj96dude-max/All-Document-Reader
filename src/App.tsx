@@ -8,10 +8,17 @@ import SettingScreen from './screens/SettingScreen';
 import FileListScreen from './screens/FileListScreen';
 import { Image } from 'react-native';
 import CustomHeader from './components/CustomHeader';
-import FileListHeader from './components/FileListHeader';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+// Lazy wrapper: react-native-pdf doesn't support the New Architecture and crashes
+// with "getConstants of null" if loaded eagerly. Deferring the require() to render
+// time ensures the native module is only accessed when the user navigates here.
+const LazyDocumentViewer = (props: any) => {
+  const DocumentViewerScreen = require('./screens/DocumentViewerScreen').default;
+  return <DocumentViewerScreen {...props} />;
+};
 
 const MainTabs = () => {
   return (
@@ -76,9 +83,14 @@ const App = () => {
             headerShown: false,
           })}
         />
+        <Stack.Screen
+          name="FileViewer"
+          component={LazyDocumentViewer}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
 };
 
 export default App;
+

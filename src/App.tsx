@@ -6,6 +6,7 @@ import HomeScreen from './screens/HomeScreen';
 import FavoriteScreen from './screens/FavoriteScreen';
 import SettingScreen from './screens/SettingScreen';
 import FileListScreen from './screens/FileListScreen';
+import DocumentViewerScreen from './screens/DocumentViewerScreen';
 import { Image } from 'react-native';
 import CustomHeader from './components/CustomHeader';
 import FileListHeader from './components/FileListHeader';
@@ -75,6 +76,10 @@ const App = () => {
           options={({ route }: any) => ({
             headerShown: false,
           })}
+        />
+        <Stack.Screen 
+          name="FileViewer" 
+          component={DocumentViewerScreen} 
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -144,7 +144,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <FileListHeader title={fileType} />
+      <FileListHeader title={fileType} onBack={() => navigation.goBack()} />
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#ED1C24" />

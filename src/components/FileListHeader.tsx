@@ -1,13 +1,13 @@
-import { Image } from 'react-native';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, TouchableOpacity, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type prop = {
   title: string;
   style?: string;
+  onBack?: () => void;
 };
 
-const FileListHeader = ({ title }: prop) => {
+const FileListHeader = ({ title, onBack }: prop) => {
   const insets = useSafeAreaInsets();
 
   const getHeaderTitle = (fileType: string): string => {
@@ -37,10 +37,16 @@ const FileListHeader = ({ title }: prop) => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Image
-        source={require('../../Assets/icons/chevron_backward.png')}
-        style={styles.icon}
-      />
+      <TouchableOpacity
+        onPress={onBack}
+        style={styles.backButton}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Image
+          source={require('../../Assets/icons/chevron_backward.png')}
+          style={styles.icon}
+        />
+      </TouchableOpacity>
       <Text style={styles.title}>{headerTitle}</Text>
     </View>
   );
@@ -54,6 +60,10 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 30,
   },
+  backButton: {
+    padding: 4,
+    marginRight: 10,
+  },
   icon: {
     width: 24,
     height: 24,
@@ -61,7 +71,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    paddingLeft: 50,
   },
 });
 

@@ -138,7 +138,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
         source={require('../../Assets/home/Empty Folder.png')}
         style={styles.emptyImage}
       />
-      <Text style={styles.emptyText}>No files found</Text>
+      <Text style={styles.emptyText}>No Documents Yet!</Text>
     </View>
   );
 

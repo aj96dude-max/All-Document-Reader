@@ -1,37 +1,81 @@
-import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
+import { NativeModules, PermissionsAndroid, Platform, Alert } from 'react-native';
 import type { ScannedFile } from '../types/types';
 
 const { FileScannerModule } = NativeModules;
 
 /**
- * Request storage permission for Android <= 12 (API 32).
- * Android 13+ does not require runtime permission for MediaStore document queries.
+ * Request the appropriate storage permission based on Android version:
+ * - Android 11+ (API 30+): MANAGE_EXTERNAL_STORAGE (all-files access)
+ * - Android 10 and below:  READ_EXTERNAL_STORAGE
  */
 export async function requestStoragePermission(): Promise<boolean> {
   if (Platform.OS !== 'android') {
     return false;
   }
 
-  // Android 13+ (API 33+): no runtime permission needed for document files via MediaStore
-  if (Platform.Version >= 33) {
-    return true;
+  // Android 11+ (API 30+): use MANAGE_EXTERNAL_STORAGE for full filesystem access
+  if (Platform.Version >= 30) {
+    try {
+      const isGranted: boolean = await FileScannerModule.isAllFilesAccessGranted();
+      if (isGranted) {
+        return true;
+      }
+
+      // Show an explanation dialog before opening the settings screen
+      return new Promise<boolean>((resolve) => {
+        Alert.alert(
+          'All Files Access Required',
+          'This app needs access to all files on your device to scan for documents. ' +
+          'Please enable "Allow access to manage all files" on the next screen.',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => resolve(false),
+            },
+            {
+              text: 'Open Settings',
+              onPress: async () => {
+                try {
+                  await FileScannerModule.requestAllFilesAccess();
+                  // The user has been taken to Settings. We can't know the result
+                  // right away, but the next scan attempt will re-check.
+                  // For now, re-check after a short delay to give user time to toggle.
+                  resolve(true);
+                } catch {
+                  resolve(false);
+                }
+              },
+            },
+          ],
+          { cancelable: false },
+        );
+      });
+    } catch {
+      // Fall through to legacy permission request
+    }
   }
 
-  try {
-    const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-      {
-        title: 'Storage Permission Required',
-        message: 'This app needs access to your storage to find documents.',
-        buttonNeutral: 'Ask Me Later',
-        buttonNegative: 'Cancel',
-        buttonPositive: 'OK',
-      },
-    );
-    return granted === PermissionsAndroid.RESULTS.GRANTED;
-  } catch {
-    return false;
+  // Android ≤ 12 (API ≤ 32): use READ_EXTERNAL_STORAGE
+  if (Platform.Version <= 32) {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        {
+          title: 'Storage Permission Required',
+          message: 'This app needs access to your storage to find documents.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        },
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch {
+      return false;
+    }
   }
+
+  return true;
 }
 
 /**

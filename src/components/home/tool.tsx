@@ -1,5 +1,4 @@
-import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, TouchableOpacity, StyleSheet, Text, View } from "react-native";
 
 type ToolProps = {
   title: string;
@@ -9,16 +8,13 @@ type ToolProps = {
 
 const Tool = ({ title, icon, onPress }: ToolProps) => {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
-    >
+    <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.iconPlaceHolder}>
         <Image source={icon} style={styles.image} />
       </View>
 
       <Text style={styles.title}>{title}</Text>
-    </Pressable>
+    </TouchableOpacity>
   );
 };
 

@@ -16,7 +16,8 @@ import FileListHeader from '../components/FileListHeader';
 import FileListItem from '../components/ui/FileListItem';
 import FileActionMenuModal from '../components/ui/FileActionMenuModal';
 import RenameModal from '../components/viewer/RenameModal';
-import { scanFiles, deleteFile, renameFile, shareFile } from '../services/FileScanner';
+import { scanFiles, renameFile, shareFile } from '../services/FileScanner';
+import { moveToTrash } from '../services/TrashService';
 import {
   isFavorite as checkIsFavorite,
   toggleFavorite,
@@ -125,21 +126,21 @@ const FileListScreen = ({ route, navigation }: Props) => {
     if (!selectedFileForMenu) return;
     const targetFile = selectedFileForMenu;
     Alert.alert(
-      'Delete Document',
-      `Are you sure you want to delete "${targetFile.name}"?`,
+      'Move to Trash',
+      `Move "${targetFile.name}" to Trash? It will be automatically deleted after 30 days.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Move to Trash',
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteFile(targetFile.uri);
-              await removeFavorite(targetFile.uri);
-              await removeRecentDocument(targetFile.uri);
-              loadFiles();
+              await moveToTrash(targetFile);
+              setFiles((prev) =>
+                prev.filter((f) => f.uri !== targetFile.uri && f.id !== targetFile.id)
+              );
             } catch (err: any) {
-              Alert.alert('Delete Failed', err?.message || 'Could not delete file');
+              Alert.alert('Error', err?.message || 'Could not move file to trash');
             }
           },
         },

@@ -8,14 +8,19 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SettingItem from '../components/settings/SettingItem';
+import { RootStackParamList } from '../types/types';
 import {
   getAppSettings,
   saveAppSettings,
 } from '../services/SettingsService';
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 const SettingScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
   const [keepScreenOn, setKeepScreenOn] = useState<boolean>(true);
 
   // Load saved settings
@@ -48,11 +53,7 @@ const SettingScreen = () => {
   };
 
   const handleTrashPress = () => {
-    Alert.alert(
-      'Trash',
-      'Items moved to Trash are permanently deleted after 30 days.',
-      [{ text: 'OK', style: 'default' }]
-    );
+    navigation.navigate('Trash');
   };
 
   const handlePrivacyPolicyPress = async () => {

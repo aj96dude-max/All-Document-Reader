@@ -112,6 +112,19 @@ export async function scanFiles(fileType: string): Promise<ScannedFile[]> {
   }
 
   const results: ScannedFile[] = await FileScannerModule.scanFiles(fileType);
+  try {
+    const { getTrashFiles } = require('./TrashService');
+    const trashFiles = await getTrashFiles();
+    if (trashFiles && trashFiles.length > 0) {
+      const trashUriSet = new Set(trashFiles.map((t: any) => t.uri));
+      const trashIdSet = new Set(trashFiles.map((t: any) => t.id));
+      return results.filter(
+        (f) => !trashUriSet.has(f.uri) && !trashIdSet.has(f.id)
+      );
+    }
+  } catch (e) {
+    console.warn('Could not filter trash files from scan results:', e);
+  }
   return results;
 }
 

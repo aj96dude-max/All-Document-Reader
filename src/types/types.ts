@@ -16,4 +16,5 @@ export type RootStackParamList = {
   FileViewer: {
     file: ScannedFile;
   };
+  Trash: undefined;
 };

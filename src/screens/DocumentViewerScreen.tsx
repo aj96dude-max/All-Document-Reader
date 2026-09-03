@@ -12,7 +12,8 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, ScannedFile } from '../types/types';
-import { deleteFile, renameFile, shareFile } from '../services/FileScanner';
+import { renameFile, shareFile } from '../services/FileScanner';
+import { moveToTrash } from '../services/TrashService';
 import {
   isFavorite as checkIsFavorite,
   toggleFavorite as toggleFavoriteStorage,
@@ -144,22 +145,20 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   // Delete document
   const handleDelete = () => {
     Alert.alert(
-      'Delete Document',
-      `Are you sure you want to delete "${fileName}"?`,
+      'Move to Trash',
+      `Move "${fileName}" to Trash? It will be automatically deleted after 30 days.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Move to Trash',
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteFile(currentFile.uri);
-              await removeFavorite(currentFile.uri);
-              await removeRecentDocument(currentFile.uri);
+              await moveToTrash(currentFile);
               navigation.goBack();
             } catch (err: any) {
-              console.error('Delete error:', err);
-              Alert.alert('Delete Failed', err?.message || 'Could not delete file');
+              console.error('Move to trash error:', err);
+              Alert.alert('Error', err?.message || 'Could not move file to trash');
             }
           },
         },

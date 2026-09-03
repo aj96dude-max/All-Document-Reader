@@ -7,6 +7,7 @@ import FavoriteScreen from './screens/FavoriteScreen';
 import SettingScreen from './screens/SettingScreen';
 import FileListScreen from './screens/FileListScreen';
 import DocumentViewerScreen from './screens/DocumentViewerScreen';
+import TrashScreen from './screens/TrashScreen';
 import { RootStackParamList } from './types/types';
 import { Image } from 'react-native';
 import CustomHeader from './components/CustomHeader';
@@ -85,6 +86,10 @@ const App = () => {
         <Stack.Screen
           name="FileViewer"
           component={DocumentViewerScreen}
+        />
+        <Stack.Screen
+          name="Trash"
+          component={TrashScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

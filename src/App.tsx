@@ -1,18 +1,19 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect } from 'react';
 import HomeScreen from './screens/HomeScreen';
 import FavoriteScreen from './screens/FavoriteScreen';
 import SettingScreen from './screens/SettingScreen';
 import FileListScreen from './screens/FileListScreen';
 import DocumentViewerScreen from './screens/DocumentViewerScreen';
+import { RootStackParamList } from './types/types';
 import { Image } from 'react-native';
 import CustomHeader from './components/CustomHeader';
-import FileListHeader from './components/FileListHeader';
+import { initSettings } from './services/SettingsService';
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const MainTabs = () => {
   return (
@@ -39,7 +40,7 @@ const MainTabs = () => {
         name="Favorite"
         component={FavoriteScreen}
         options={{
-          header: () => (<CustomHeader title='Favorites' />),
+          header: () => (<CustomHeader title='All Document Reader' />),
           tabBarIcon: ({ size, focused }) => (
             <Image
               source={ focused ? require('../Assets/tabs/favorite-active.png') : require('../Assets/tabs/favorite.png')}
@@ -52,7 +53,7 @@ const MainTabs = () => {
         name="Setting"
         component={SettingScreen}
         options={{
-          header: () => (<CustomHeader title='Settings' />),
+          header: () => (<CustomHeader title='All Document Reader' />),
           tabBarIcon: ({ size, focused }) => (
             <Image
               source={ focused ? require('../Assets/tabs/settings-active.png') : require('../Assets/tabs/settings.png')}
@@ -66,6 +67,10 @@ const MainTabs = () => {
 };
 
 const App = () => {
+  useEffect(() => {
+    initSettings();
+  }, []);
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -77,9 +82,9 @@ const App = () => {
             headerShown: false,
           })}
         />
-        <Stack.Screen 
-          name="FileViewer" 
-          component={DocumentViewerScreen} 
+        <Stack.Screen
+          name="FileViewer"
+          component={DocumentViewerScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -87,3 +92,4 @@ const App = () => {
 };
 
 export default App;
+

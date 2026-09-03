@@ -1,145 +1,248 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, PermissionsAndroid, ActivityIndicator, Alert, Text } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  Alert,
+  Text,
+  Image,
+  StatusBar,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/types';
+import { useFocusEffect } from '@react-navigation/native';
+import { RootStackParamList, ScannedFile } from '../types/types';
 import FileListHeader from '../components/FileListHeader';
 import FileListItem from '../components/ui/FileListItem';
-import { scanDeviceFiles, FileData } from '../utils/fileScanner';
+import FileActionMenuModal from '../components/ui/FileActionMenuModal';
+import RenameModal from '../components/viewer/RenameModal';
+import { scanFiles, deleteFile, renameFile, shareFile } from '../services/FileScanner';
+import {
+  isFavorite as checkIsFavorite,
+  toggleFavorite,
+  removeFavorite,
+  updateFavoriteFile,
+} from '../services/FavoritesService';
+import {
+  addRecentDocument,
+  removeRecentDocument,
+  updateRecentDocument,
+} from '../services/RecentDocumentsService';
+import {
+  formatBytes,
+  formatDate,
+  formatTime,
+  getIconForExtension,
+  getBgColorForExtension,
+  UNSUPPORTED_VIEWER_EXTENSIONS,
+} from '../services/fileHelpers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FileList'>;
 
-const formatBytes = (bytes: number, decimals = 2) => {
-  if (!+bytes) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-};
-
-const formatDate = (date?: Date) => {
-  if (!date) return 'Unknown';
-  const today = new Date();
-  if (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  ) {
-    return 'Today';
-  }
-  return date.toLocaleDateString();
-};
-
-const formatTime = (date?: Date) => {
-  if (!date) return '';
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
-const getIconForType = (type: string) => {
-  switch (type) {
-    case 'pdf': return require('../../Assets/home/pdf.png');
-    case 'doc':
-    case 'docx': return require('../../Assets/home/word.png');
-    case 'xls':
-    case 'xlsx': return require('../../Assets/home/excel.png');
-    case 'ppt':
-    case 'pptx': return require('../../Assets/home/ppt.png');
-    case 'txt': return require('../../Assets/home/txt.png');
-    case 'epub': return require('../../Assets/home/epub.png');
-    case 'rtf': return require('../../Assets/home/rtf.png');
-    default: return require('../../Assets/home/allfiles.png');
-  }
-};
-
-const getMimeType = (ext: string) => {
-  switch (ext) {
-    case 'pdf': return 'application/pdf';
-    case 'txt': return 'text/plain';
-    // add more if needed
-    default: return '*/*';
-  }
-};
-
 const FileListScreen = ({ route, navigation }: Props) => {
   const { fileType } = route.params;
-  const [files, setFiles] = useState<FileData[]>([]);
+  const [files, setFiles] = useState<ScannedFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const requestPermissionAndScan = async () => {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-          {
-            title: 'Storage Permission Required',
-            message: 'App needs access to your storage to read documents',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          },
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          const scannedFiles = await scanDeviceFiles(fileType);
-          setFiles(scannedFiles);
-        } else {
-          Alert.alert('Permission Denied', 'Storage permission is required to scan files.');
-        }
-      } catch (err) {
-        console.warn(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // 3-dots Menu & Rename state
+  const [selectedFileForMenu, setSelectedFileForMenu] = useState<ScannedFile | null>(null);
+  const [selectedFileIsFavorite, setSelectedFileIsFavorite] = useState<boolean>(false);
+  const [menuAnchorPosition, setMenuAnchorPosition] = useState<{ top: number; right: number } | null>(null);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [isRenameVisible, setIsRenameVisible] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
 
-    requestPermissionAndScan();
+  const loadFiles = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await scanFiles(fileType);
+      console.log(`Scanned ${result.length} ${fileType} files.`);
+      setFiles(result);
+    } catch (e: any) {
+      console.error('Error scanning files:', e);
+      setError(e.message || 'Failed to scan files.');
+    } finally {
+      setLoading(false);
+    }
   }, [fileType]);
 
-  const handleFilePress = (file: FileData) => {
-    const skipTypes = ['ppt', 'pptx', 'doc', 'docx'];
-    if (skipTypes.includes(file.type)) {
-      Alert.alert('Unsupported', 'This file type cannot be opened currently.');
+  useFocusEffect(
+    useCallback(() => {
+      loadFiles();
+    }, [loadFiles])
+  );
+
+  const handleFilePress = async (file: ScannedFile) => {
+    if (UNSUPPORTED_VIEWER_EXTENSIONS.includes((file.extension || '').toLowerCase())) {
+      Alert.alert(
+        'Unsupported Format',
+        `Viewing ${file.extension.toUpperCase()} files is not supported yet.`
+      );
       return;
     }
-
-    navigation.navigate('FileViewer', {
-      file: {
-        name: file.name,
-        type: getMimeType(file.type),
-        uri: 'file://' + file.path,
-      },
-    });
+    await addRecentDocument(file);
+    navigation.navigate('FileViewer', { file });
   };
+
+  const handleMorePress = async (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
+    setSelectedFileForMenu(file);
+    const isFav = await checkIsFavorite(file.uri);
+    setSelectedFileIsFavorite(isFav);
+    if (position) {
+      setMenuAnchorPosition({ top: position.pageY, right: 24 });
+    } else {
+      setMenuAnchorPosition(null);
+    }
+    setIsMenuVisible(true);
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!selectedFileForMenu) return;
+    try {
+      const newStatus = await toggleFavorite(selectedFileForMenu);
+      setSelectedFileIsFavorite(newStatus);
+    } catch (err: any) {
+      console.error('Toggle favorite error:', err);
+    }
+  };
+
+  const handleMenuShare = async () => {
+    if (!selectedFileForMenu) return;
+    try {
+      await shareFile(
+        selectedFileForMenu.uri,
+        selectedFileForMenu.mimeType,
+        selectedFileForMenu.name
+      );
+    } catch (err: any) {
+      Alert.alert('Share Failed', err?.message || 'Could not share file');
+    }
+  };
+
+  const handleMenuDelete = () => {
+    if (!selectedFileForMenu) return;
+    const targetFile = selectedFileForMenu;
+    Alert.alert(
+      'Delete Document',
+      `Are you sure you want to delete "${targetFile.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteFile(targetFile.uri);
+              await removeFavorite(targetFile.uri);
+              await removeRecentDocument(targetFile.uri);
+              loadFiles();
+            } catch (err: any) {
+              Alert.alert('Delete Failed', err?.message || 'Could not delete file');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRenameSave = async (newName: string) => {
+    if (!selectedFileForMenu) return;
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      Alert.alert('Invalid Name', 'Document name cannot be empty');
+      return;
+    }
+    try {
+      setIsRenaming(true);
+      const oldUri = selectedFileForMenu.uri;
+      const updated = await renameFile(oldUri, trimmed);
+      if (selectedFileIsFavorite) {
+        await updateFavoriteFile(oldUri, updated);
+      }
+      await updateRecentDocument(oldUri, updated);
+      setIsRenameVisible(false);
+      loadFiles();
+    } catch (err: any) {
+      Alert.alert('Rename Failed', err?.message || 'Could not rename file');
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
+  const renderItem = ({ item }: { item: ScannedFile }) => (
+    <FileListItem
+      name={item.name}
+      size={formatBytes(item.size)}
+      date={formatDate(item.modifiedDate)}
+      time={formatTime(item.modifiedDate)}
+      icon={getIconForExtension(item.extension)}
+      iconBgColor={getBgColorForExtension(item.extension)}
+      onPress={() => handleFilePress(item)}
+      onMorePress={(pos) => handleMorePress(item, pos)}
+    />
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.center}>
+      <Image
+        source={require('../../Assets/home/Empty Folder.png')}
+        style={styles.emptyImage}
+      />
+      <Text style={styles.emptyText}>No Documents Yet!</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <FileListHeader title={fileType.toUpperCase()} />
+      <StatusBar barStyle="dark-content" />
+      <FileListHeader title={fileType} onBack={() => navigation.goBack()} />
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#ED1C24" />
-          <Text style={{ marginTop: 10 }}>Scanning device...</Text>
+          <Text style={styles.loadingText}>Scanning device…</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : (
         <FlatList
           data={files}
-          keyExtractor={(item) => item.path}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
-          renderItem={({ item }) => (
-            <FileListItem
-              name={item.name}
-              size={formatBytes(item.size)}
-              date={formatDate(item.mtime)}
-              time={formatTime(item.mtime)}
-              icon={getIconForType(item.type)}
-              onPress={() => handleFilePress(item)}
-            />
-          )}
-          ListEmptyComponent={
-            <View style={styles.center}>
-              <Text>No files found.</Text>
-            </View>
+          keyExtractor={(item) => item.uri || item.id}
+          renderItem={renderItem}
+          contentContainerStyle={
+            files.length === 0 ? styles.emptyContainer : styles.listContent
           }
+          ListEmptyComponent={renderEmpty}
         />
       )}
+
+      {/* 3-Dots Action Menu Modal */}
+      <FileActionMenuModal
+        visible={isMenuVisible}
+        anchorPosition={menuAnchorPosition}
+        isFavorite={selectedFileIsFavorite}
+        onClose={() => setIsMenuVisible(false)}
+        onToggleFavorite={handleToggleFavorite}
+        onRename={() => setIsRenameVisible(true)}
+        onDelete={handleMenuDelete}
+        onShare={handleMenuShare}
+      />
+
+      {/* Rename Modal */}
+      <RenameModal
+        visible={isRenameVisible}
+        initialName={
+          selectedFileForMenu
+            ? selectedFileForMenu.name.replace(/\.[^/.]+$/, '') || selectedFileForMenu.name
+            : ''
+        }
+        isRenaming={isRenaming}
+        onClose={() => setIsRenameVisible(false)}
+        onSave={handleRenameSave}
+      />
     </View>
   );
 };
@@ -153,6 +256,36 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyImage: {
+    width: 120,
+    height: 120,
+    marginBottom: 16,
+    opacity: 0.6,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#ED1C24',
+    textAlign: 'center',
   },
 });
 

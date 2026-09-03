@@ -1,49 +1,64 @@
-import React from "react";
+import React from 'react';
 import {
   View,
   Text,
   Image,
   Pressable,
   StyleSheet,
-} from "react-native";
+  ImageSourcePropType,
+} from 'react-native';
 
-type FileListItemProps = {
+export type FileListItemProps = {
   name: string;
   size: string;
   date: string;
-  time: string;
-  icon: any;
+  time?: string;
+  icon: ImageSourcePropType;
+  iconBgColor?: string;
   onPress: () => void;
+  onMorePress?: (position: { pageX: number; pageY: number }) => void;
 };
 
-const FileListItem = ({
+const FileListItem: React.FC<FileListItemProps> = ({
   name,
   size,
   date,
   time,
   icon,
+  iconBgColor = '#FFE5E7',
   onPress,
-}: FileListItemProps) => {
+  onMorePress,
+}) => {
   return (
-    <Pressable style={styles.container} onPress={onPress}>
-      <View style={styles.iconContainer}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.container,
+        pressed && styles.containerPressed,
+      ]}
+      onPress={onPress}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
         <Image source={icon} style={styles.icon} />
       </View>
 
       <View style={styles.details}>
-        <Text style={styles.name} numberOfLines={1}>
+        <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
           {name}
         </Text>
 
-        <Text style={styles.info}>
-          {size} · {date}, {time}
+        <Text style={styles.info} numberOfLines={1}>
+          {size} . {date}{time ? `, ${time}` : ''}
         </Text>
       </View>
 
       <Pressable
         style={styles.moreButton}
-        onPress={() => {
+        onPress={(e) => {
+          e.stopPropagation?.();
+          const { pageX, pageY } = e.nativeEvent;
+          onMorePress?.({ pageX, pageY });
         }}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       >
         <Text style={styles.more}>⋮</Text>
       </Pressable>
@@ -54,58 +69,61 @@ const FileListItem = ({
 const styles = StyleSheet.create({
   container: {
     height: 72,
-    backgroundColor: "#fff",
+    backgroundColor: '#FFFFFF',
     borderRadius: 36,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
     marginVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-
+  containerPressed: {
+    opacity: 0.9,
+    backgroundColor: '#FAFAFA',
+  },
   iconContainer: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#ffe1e1",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
   icon: {
-    width: 52,
-    height: 52,
-    resizeMode: "contain",
-    borderRadius: 100,
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
   },
-
   details: {
     flex: 1,
     marginLeft: 14,
+    marginRight: 8,
+    justifyContent: 'center',
   },
-
   name: {
     fontSize: 15,
-    fontWeight: "600",
-    color: "#222",
+    fontWeight: '600',
+    color: '#1F2937',
   },
-
   info: {
     marginTop: 4,
     fontSize: 12,
-    color: "#999",
+    color: '#9CA3AF',
   },
-
   moreButton: {
-    width: 35,
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 36,
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
   more: {
-    fontSize: 25,
-    color: "#999",
-    lineHeight: 28,
+    fontSize: 22,
+    color: '#9CA3AF',
+    fontWeight: '700',
+    lineHeight: 24,
   },
 });
 

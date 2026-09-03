@@ -59,6 +59,10 @@ const ToolsContainer = () => {
     },
   ];
 
+  const handleToolPress = (title: string) => {
+    console.log('Pressed:', title);
+  };
+
   return (
     <View style={styles.container}>
       {tools.map(item => (

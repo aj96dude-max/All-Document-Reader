@@ -1,38 +1,67 @@
-import { Image } from "react-native";
-import { StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import React from 'react';
+import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type prop = {
+type Props = {
   title: string;
-  style?: string;
+  onMenuPress?: () => void;
 };
 
-const CustomHeader = ({ title }: prop) => {
+const CustomHeader = ({ title, onMenuPress }: Props) => {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Image source={require("../../Assets/clear_all.png")} style={styles.icon} />
-      <Text style={styles.title}>{title}</Text>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
+      <TouchableOpacity
+        style={styles.iconButton}
+        onPress={onMenuPress}
+        activeOpacity={0.7}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      >
+        <Image
+          source={require('../../Assets/clear_all.png')}
+          style={styles.icon}
+        />
+      </TouchableOpacity>
+
+      <Text style={styles.title} numberOfLines={1}>
+        {title}
+      </Text>
+
+      <View style={styles.placeholder} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    marginTop: 30,
-    alignItems: "center",
-    width: "100%",
-    paddingHorizontal: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+    backgroundColor: '#F5F6F8',
+  },
+  iconButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   icon: {
     width: 24,
     height: 24,
+    resizeMode: 'contain',
   },
   title: {
-    fontSize: 16,
-    fontWeight: "bold",
-    paddingLeft: 50,
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  placeholder: {
+    width: 32,
   },
 });
 

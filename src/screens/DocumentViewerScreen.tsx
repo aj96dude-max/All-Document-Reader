@@ -19,6 +19,11 @@ import {
   removeFavorite,
   updateFavoriteFile,
 } from '../services/FavoritesService';
+import {
+  addRecentDocument,
+  removeRecentDocument,
+  updateRecentDocument,
+} from '../services/RecentDocumentsService';
 
 import DocumentHeader from '../components/viewer/DocumentHeader';
 import DocumentBottomToolbar from '../components/viewer/DocumentBottomToolbar';
@@ -60,20 +65,21 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const [loadingText, setLoadingText] = useState<boolean>(isText);
   const [textError, setTextError] = useState<string | null>(null);
 
-  // Check initial favorite status
+  // Record into Recent Documents & Check initial favorite status
   useEffect(() => {
     let isMounted = true;
-    const checkStatus = async () => {
+    const initFile = async () => {
       try {
+        await addRecentDocument(currentFile);
         const fav = await checkIsFavorite(currentFile.uri);
         if (isMounted) {
           setIsFavorite(fav);
         }
       } catch (err) {
-        console.error('Error checking favorite status:', err);
+        console.error('Error initializing document viewer:', err);
       }
     };
-    checkStatus();
+    initFile();
     return () => {
       isMounted = false;
     };
@@ -149,6 +155,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
             try {
               await deleteFile(currentFile.uri);
               await removeFavorite(currentFile.uri);
+              await removeRecentDocument(currentFile.uri);
               navigation.goBack();
             } catch (err: any) {
               console.error('Delete error:', err);
@@ -174,6 +181,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
       if (isFavorite) {
         await updateFavoriteFile(oldUri, updated);
       }
+      await updateRecentDocument(oldUri, updated);
       setCurrentFile(updated);
       setFileName(updated.name);
       setIsRenameModalVisible(false);

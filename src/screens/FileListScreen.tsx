@@ -7,6 +7,7 @@ import {
   Alert,
   Text,
   Image,
+  StatusBar,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -16,6 +17,12 @@ import FileListItem from '../components/ui/FileListItem';
 import FileActionMenuModal from '../components/ui/FileActionMenuModal';
 import RenameModal from '../components/viewer/RenameModal';
 import { scanFiles, deleteFile, renameFile, shareFile } from '../services/FileScanner';
+import {
+  isFavorite as checkIsFavorite,
+  toggleFavorite,
+  removeFavorite,
+  updateFavoriteFile,
+} from '../services/FavoritesService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FileList'>;
 
@@ -61,7 +68,7 @@ const formatTime = (epochMs: number): string => {
 };
 
 const getIconForExtension = (ext: string) => {
-  switch (ext) {
+  switch ((ext || '').toLowerCase()) {
     case 'pdf':
       return require('../../Assets/home/pdf.png');
     case 'doc':
@@ -84,6 +91,30 @@ const getIconForExtension = (ext: string) => {
   }
 };
 
+const getBgColorForExtension = (ext: string): string => {
+  switch ((ext || '').toLowerCase()) {
+    case 'pdf':
+      return '#FFE5E7';
+    case 'doc':
+    case 'docx':
+      return '#DBEAFE';
+    case 'xls':
+    case 'xlsx':
+      return '#D1FAE5';
+    case 'ppt':
+    case 'pptx':
+      return '#FFEDD5';
+    case 'txt':
+      return '#E2E8F0';
+    case 'epub':
+      return '#EDE9FE';
+    case 'rtf':
+      return '#FCE7F3';
+    default:
+      return '#F3F4F6';
+  }
+};
+
 const UNSUPPORTED_VIEWER_EXTENSIONS = ['ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx'];
 
 // --- Component ---
@@ -96,6 +127,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
 
   // 3-dots Menu & Rename state
   const [selectedFileForMenu, setSelectedFileForMenu] = useState<ScannedFile | null>(null);
+  const [selectedFileIsFavorite, setSelectedFileIsFavorite] = useState<boolean>(false);
   const [menuAnchorPosition, setMenuAnchorPosition] = useState<{ top: number; right: number } | null>(null);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isRenameVisible, setIsRenameVisible] = useState(false);
@@ -123,24 +155,36 @@ const FileListScreen = ({ route, navigation }: Props) => {
   );
 
   const handleFilePress = (file: ScannedFile) => {
-    if (UNSUPPORTED_VIEWER_EXTENSIONS.includes(file.extension)) {
+    if (UNSUPPORTED_VIEWER_EXTENSIONS.includes((file.extension || '').toLowerCase())) {
       Alert.alert(
         'Unsupported Format',
-        `Viewing ${file.extension.toUpperCase()} files is not supported yet.`,
+        `Viewing ${file.extension.toUpperCase()} files is not supported yet.`
       );
       return;
     }
     navigation.navigate('FileViewer', { file });
   };
 
-  const handleMorePress = (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
+  const handleMorePress = async (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
     setSelectedFileForMenu(file);
+    const isFav = await checkIsFavorite(file.uri);
+    setSelectedFileIsFavorite(isFav);
     if (position) {
       setMenuAnchorPosition({ top: position.pageY, right: 24 });
     } else {
       setMenuAnchorPosition(null);
     }
     setIsMenuVisible(true);
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!selectedFileForMenu) return;
+    try {
+      const newStatus = await toggleFavorite(selectedFileForMenu);
+      setSelectedFileIsFavorite(newStatus);
+    } catch (err: any) {
+      console.error('Toggle favorite error:', err);
+    }
   };
 
   const handleMenuShare = async () => {
@@ -170,6 +214,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
           onPress: async () => {
             try {
               await deleteFile(targetFile.uri);
+              await removeFavorite(targetFile.uri);
               loadFiles();
             } catch (err: any) {
               Alert.alert('Delete Failed', err?.message || 'Could not delete file');
@@ -189,7 +234,11 @@ const FileListScreen = ({ route, navigation }: Props) => {
     }
     try {
       setIsRenaming(true);
-      await renameFile(selectedFileForMenu.uri, trimmed);
+      const oldUri = selectedFileForMenu.uri;
+      const updated = await renameFile(oldUri, trimmed);
+      if (selectedFileIsFavorite) {
+        await updateFavoriteFile(oldUri, updated);
+      }
       setIsRenameVisible(false);
       loadFiles();
     } catch (err: any) {
@@ -206,6 +255,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
       date={formatDate(item.modifiedDate)}
       time={formatTime(item.modifiedDate)}
       icon={getIconForExtension(item.extension)}
+      iconBgColor={getBgColorForExtension(item.extension)}
       onPress={() => handleFilePress(item)}
       onMorePress={(pos) => handleMorePress(item, pos)}
     />
@@ -223,6 +273,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <FileListHeader title={fileType} onBack={() => navigation.goBack()} />
       {loading ? (
         <View style={styles.center}>
@@ -249,8 +300,9 @@ const FileListScreen = ({ route, navigation }: Props) => {
       <FileActionMenuModal
         visible={isMenuVisible}
         anchorPosition={menuAnchorPosition}
+        isFavorite={selectedFileIsFavorite}
         onClose={() => setIsMenuVisible(false)}
-        onToggleFavorite={() => {}}
+        onToggleFavorite={handleToggleFavorite}
         onRename={() => setIsRenameVisible(true)}
         onDelete={handleMenuDelete}
         onShare={handleMenuShare}
@@ -315,4 +367,3 @@ const styles = StyleSheet.create({
 });
 
 export default FileListScreen;
-

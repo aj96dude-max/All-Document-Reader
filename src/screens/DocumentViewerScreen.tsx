@@ -13,6 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, ScannedFile } from '../types/types';
 import { deleteFile, renameFile, shareFile } from '../services/FileScanner';
+import {
+  isFavorite as checkIsFavorite,
+  toggleFavorite as toggleFavoriteStorage,
+  removeFavorite,
+  updateFavoriteFile,
+} from '../services/FavoritesService';
 
 import DocumentHeader from '../components/viewer/DocumentHeader';
 import DocumentBottomToolbar from '../components/viewer/DocumentBottomToolbar';
@@ -54,6 +60,26 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const [loadingText, setLoadingText] = useState<boolean>(isText);
   const [textError, setTextError] = useState<string | null>(null);
 
+  // Check initial favorite status
+  useEffect(() => {
+    let isMounted = true;
+    const checkStatus = async () => {
+      try {
+        const fav = await checkIsFavorite(currentFile.uri);
+        if (isMounted) {
+          setIsFavorite(fav);
+        }
+      } catch (err) {
+        console.error('Error checking favorite status:', err);
+      }
+    };
+    checkStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentFile.uri]);
+
+  // Load text file content
   useEffect(() => {
     if (isText) {
       let isMounted = true;
@@ -94,8 +120,13 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   // Toggle favorite
-  const handleToggleFavorite = () => {
-    setIsFavorite((prev) => !prev);
+  const handleToggleFavorite = async () => {
+    try {
+      const newStatus = await toggleFavoriteStorage(currentFile);
+      setIsFavorite(newStatus);
+    } catch (error: any) {
+      console.error('Error toggling favorite:', error);
+    }
   };
 
   // Jump to Page
@@ -117,6 +148,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
           onPress: async () => {
             try {
               await deleteFile(currentFile.uri);
+              await removeFavorite(currentFile.uri);
               navigation.goBack();
             } catch (err: any) {
               console.error('Delete error:', err);
@@ -137,7 +169,11 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
     }
     try {
       setIsRenaming(true);
-      const updated = await renameFile(currentFile.uri, trimmed);
+      const oldUri = currentFile.uri;
+      const updated = await renameFile(oldUri, trimmed);
+      if (isFavorite) {
+        await updateFavoriteFile(oldUri, updated);
+      }
       setCurrentFile(updated);
       setFileName(updated.name);
       setIsRenameModalVisible(false);

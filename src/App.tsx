@@ -39,7 +39,7 @@ const MainTabs = () => {
         name="Favorite"
         component={FavoriteScreen}
         options={{
-          header: () => (<CustomHeader title='Favorites' />),
+          header: () => (<CustomHeader title='All Document Reader' />),
           tabBarIcon: ({ size, focused }) => (
             <Image
               source={ focused ? require('../Assets/tabs/favorite-active.png') : require('../Assets/tabs/favorite.png')}

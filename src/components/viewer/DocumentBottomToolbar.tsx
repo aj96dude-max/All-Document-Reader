@@ -43,10 +43,22 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
         activeOpacity={0.7}
       >
         <Image
-          source={require('../../../Assets/icons/heart_minus.png')}
-          style={styles.toolbarIcon}
+          source={
+            isFavorite
+              ? require('../../../Assets/icons/heart_minus.png')
+              : require('../../../Assets/icons/favorite.png')
+          }
+          style={[
+            styles.toolbarIcon,
+            isFavorite && styles.favoriteActiveIcon,
+          ]}
         />
-        <Text style={styles.toolbarLabel}>
+        <Text
+          style={[
+            styles.toolbarLabel,
+            isFavorite && styles.favoriteActiveLabel,
+          ]}
+        >
           {isFavorite ? 'Unfavorite' : 'Favorite'}
         </Text>
       </TouchableOpacity>
@@ -101,10 +113,17 @@ const styles = StyleSheet.create({
     tintColor: '#1F2937',
     marginBottom: 4,
   },
+  favoriteActiveIcon: {
+    tintColor: '#ED1C24',
+  },
   toolbarLabel: {
     fontSize: 12,
     fontWeight: '500',
     color: '#1F2937',
+  },
+  favoriteActiveLabel: {
+    color: '#ED1C24',
+    fontWeight: '600',
   },
 });
 

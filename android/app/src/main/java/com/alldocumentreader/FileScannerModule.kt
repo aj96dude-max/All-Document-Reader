@@ -613,7 +613,7 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun setKeepScreenOn(enable: Boolean, promise: Promise) {
-        val activity = currentActivity
+        val activity = reactApplicationContext.currentActivity
         if (activity == null) {
             promise.resolve(false)
             return
@@ -622,9 +622,9 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
         activity.runOnUiThread {
             try {
                 if (enable) {
-                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    activity.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 } else {
-                    activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    activity.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
                 promise.resolve(true)
             } catch (e: Exception) {
@@ -635,7 +635,7 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun isKeepScreenOn(promise: Promise) {
-        val activity = currentActivity
+        val activity = reactApplicationContext.currentActivity
         if (activity == null) {
             promise.resolve(false)
             return
@@ -643,7 +643,8 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
 
         activity.runOnUiThread {
             try {
-                val isKeepingOn = (activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0
+                val flags = activity.window?.attributes?.flags ?: 0
+                val isKeepingOn = (flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0
                 promise.resolve(isKeepingOn)
             } catch (e: Exception) {
                 promise.resolve(false)

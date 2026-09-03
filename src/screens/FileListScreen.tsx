@@ -34,7 +34,6 @@ import {
   formatDate,
   formatTime,
   getIconForExtension,
-  getBgColorForExtension,
   UNSUPPORTED_VIEWER_EXTENSIONS,
 } from '../services/fileHelpers';
 
@@ -179,7 +178,6 @@ const FileListScreen = ({ route, navigation }: Props) => {
       date={formatDate(item.modifiedDate)}
       time={formatTime(item.modifiedDate)}
       icon={getIconForExtension(item.extension)}
-      iconBgColor={getBgColorForExtension(item.extension)}
       onPress={() => handleFilePress(item)}
       onMorePress={(pos) => handleMorePress(item, pos)}
     />

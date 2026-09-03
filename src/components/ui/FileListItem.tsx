@@ -25,7 +25,7 @@ const FileListItem: React.FC<FileListItemProps> = ({
   date,
   time,
   icon,
-  iconBgColor = '#FFE5E7',
+  iconBgColor,
   onPress,
   onMorePress,
 }) => {
@@ -37,7 +37,7 @@ const FileListItem: React.FC<FileListItemProps> = ({
       ]}
       onPress={onPress}
     >
-      <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
+      <View style={[styles.iconContainer, iconBgColor ? { backgroundColor: iconBgColor } : null]}>
         <Image source={icon} style={styles.icon} />
       </View>
 
@@ -86,16 +86,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
   },
   icon: {
-    width: 28,
-    height: 28,
-    resizeMode: 'contain',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    resizeMode: 'cover',
   },
   details: {
     flex: 1,

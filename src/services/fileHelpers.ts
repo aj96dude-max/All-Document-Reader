@@ -53,16 +53,16 @@ export const formatTime = (epochMs: number): string => {
 export const getIconForExtension = (ext: string): ImageSourcePropType => {
   switch ((ext || '').toLowerCase()) {
     case 'pdf':
-      return require('../../Assets/home/pdf.png');
+      return require('../../Assets/icons/pdf_circle.png');
     case 'doc':
     case 'docx':
-      return require('../../Assets/home/word.png');
+      return require('../../Assets/icons/word_circle.png');
     case 'xls':
     case 'xlsx':
-      return require('../../Assets/home/excel.png');
+      return require('../../Assets/icons/excel_circle.png');
     case 'ppt':
     case 'pptx':
-      return require('../../Assets/home/ppt.png');
+      return require('../../Assets/icons/ppt_circle.png');
     case 'txt':
       return require('../../Assets/home/txt.png');
     case 'epub':

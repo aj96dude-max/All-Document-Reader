@@ -34,7 +34,6 @@ import {
   formatDate,
   formatTime,
   getIconForExtension,
-  getBgColorForExtension,
   UNSUPPORTED_VIEWER_EXTENSIONS,
 } from '../../services/fileHelpers';
 
@@ -244,7 +243,6 @@ const RecentDocuments = () => {
               date={formatDate(file.modifiedDate)}
               time={formatTime(file.modifiedDate)}
               icon={getIconForExtension(file.extension)}
-              iconBgColor={getBgColorForExtension(file.extension)}
               onPress={() => handleFilePress(file)}
               onMorePress={(pos) => handleMorePress(file, pos)}
             />

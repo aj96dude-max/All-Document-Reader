@@ -28,7 +28,6 @@ import {
   formatDate,
   formatTime,
   getIconForExtension,
-  getBgColorForExtension,
 } from '../services/fileHelpers';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -122,7 +121,6 @@ const TrashScreen = () => {
       time={formatTime(item.trashedAt || item.modifiedDate)}
       daysRemainingText={formatDaysRemaining(item.trashedAt)}
       icon={getIconForExtension(item.extension)}
-      iconBgColor={getBgColorForExtension(item.extension)}
       onMorePress={(pos) => handleMorePress(item, pos)}
     />
   );

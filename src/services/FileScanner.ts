@@ -157,4 +157,35 @@ export async function shareFile(
   return await FileScannerModule.shareFile(uri, mimeType || '', title || '');
 }
 
+/**
+ * Toggle native Keep Screen On (FLAG_KEEP_SCREEN_ON) on the Android window.
+ */
+export async function setKeepScreenOn(enable: boolean): Promise<boolean> {
+  if (Platform.OS !== 'android' || !FileScannerModule?.setKeepScreenOn) {
+    return false;
+  }
+  try {
+    return await FileScannerModule.setKeepScreenOn(enable);
+  } catch (error) {
+    console.error('Error setting keep screen on:', error);
+    return false;
+  }
+}
+
+/**
+ * Check if Keep Screen On is currently active on the Android window.
+ */
+export async function isKeepScreenOn(): Promise<boolean> {
+  if (Platform.OS !== 'android' || !FileScannerModule?.isKeepScreenOn) {
+    return false;
+  }
+  try {
+    return await FileScannerModule.isKeepScreenOn();
+  } catch (error) {
+    console.error('Error checking keep screen on:', error);
+    return false;
+  }
+}
+
+
 

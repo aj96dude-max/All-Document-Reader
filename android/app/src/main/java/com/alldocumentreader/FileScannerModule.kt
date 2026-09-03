@@ -11,6 +11,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
 import android.webkit.MimeTypeMap
+import android.view.WindowManager
 import com.facebook.react.bridge.*
 import java.io.File
 
@@ -605,6 +606,48 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
             promise.resolve(true)
         } catch (e: Exception) {
             promise.reject("SHARE_ERROR", "Failed to share file: ${e.message}", e)
+        }
+    }
+
+    // ── Keep Screen On ──────────────────────────────────────────────────
+
+    @ReactMethod
+    fun setKeepScreenOn(enable: Boolean, promise: Promise) {
+        val activity = currentActivity
+        if (activity == null) {
+            promise.resolve(false)
+            return
+        }
+
+        activity.runOnUiThread {
+            try {
+                if (enable) {
+                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                } else {
+                    activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+                promise.resolve(true)
+            } catch (e: Exception) {
+                promise.reject("KEEP_SCREEN_ON_ERROR", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun isKeepScreenOn(promise: Promise) {
+        val activity = currentActivity
+        if (activity == null) {
+            promise.resolve(false)
+            return
+        }
+
+        activity.runOnUiThread {
+            try {
+                val isKeepingOn = (activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0
+                promise.resolve(isKeepingOn)
+            } catch (e: Exception) {
+                promise.resolve(false)
+            }
         }
     }
 }

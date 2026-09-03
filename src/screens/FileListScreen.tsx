@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   FlatList,
-  ActivityIndicator,
   Alert,
   Text,
   Image,
@@ -16,6 +15,7 @@ import FileListHeader from '../components/FileListHeader';
 import FileListItem from '../components/ui/FileListItem';
 import FileActionMenuModal from '../components/ui/FileActionMenuModal';
 import RenameModal from '../components/viewer/RenameModal';
+import Loading from '../components/common/Loading';
 import { scanFiles, renameFile, shareFile } from '../services/FileScanner';
 import { moveToTrash } from '../services/TrashService';
 import {
@@ -198,10 +198,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
       <StatusBar barStyle="dark-content" />
       <FileListHeader title={fileType} onBack={() => navigation.goBack()} />
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#ED1C24" />
-          <Text style={styles.loadingText}>Scanning device…</Text>
-        </View>
+        <Loading message="Scanning device…" />
       ) : error ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -275,11 +272,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#999',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#666',
   },
   errorText: {
     fontSize: 14,

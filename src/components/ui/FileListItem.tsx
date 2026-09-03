@@ -14,6 +14,7 @@ type FileListItemProps = {
   time: string;
   icon: any;
   onPress: () => void;
+  onMorePress?: (position: { pageX: number; pageY: number }) => void;
 };
 
 const FileListItem = ({
@@ -23,6 +24,7 @@ const FileListItem = ({
   time,
   icon,
   onPress,
+  onMorePress,
 }: FileListItemProps) => {
   return (
     <Pressable style={styles.container} onPress={onPress}>
@@ -42,8 +44,12 @@ const FileListItem = ({
 
       <Pressable
         style={styles.moreButton}
-        onPress={() => {
+        onPress={(e) => {
+          e.stopPropagation?.();
+          const { pageX, pageY } = e.nativeEvent;
+          onMorePress?.({ pageX, pageY });
         }}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Text style={styles.more}>⋮</Text>
       </Pressable>

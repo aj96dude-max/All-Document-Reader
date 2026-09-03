@@ -13,7 +13,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList, ScannedFile } from '../types/types';
 import FileListHeader from '../components/FileListHeader';
 import FileListItem from '../components/ui/FileListItem';
-import { scanFiles } from '../services/FileScanner';
+import FileActionMenuModal from '../components/ui/FileActionMenuModal';
+import RenameModal from '../components/viewer/RenameModal';
+import { scanFiles, deleteFile, renameFile, shareFile } from '../services/FileScanner';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FileList'>;
 
@@ -92,6 +94,13 @@ const FileListScreen = ({ route, navigation }: Props) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 3-dots Menu & Rename state
+  const [selectedFileForMenu, setSelectedFileForMenu] = useState<ScannedFile | null>(null);
+  const [menuAnchorPosition, setMenuAnchorPosition] = useState<{ top: number; right: number } | null>(null);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [isRenameVisible, setIsRenameVisible] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+
   const loadFiles = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -124,6 +133,72 @@ const FileListScreen = ({ route, navigation }: Props) => {
     navigation.navigate('FileViewer', { file });
   };
 
+  const handleMorePress = (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
+    setSelectedFileForMenu(file);
+    if (position) {
+      setMenuAnchorPosition({ top: position.pageY, right: 24 });
+    } else {
+      setMenuAnchorPosition(null);
+    }
+    setIsMenuVisible(true);
+  };
+
+  const handleMenuShare = async () => {
+    if (!selectedFileForMenu) return;
+    try {
+      await shareFile(
+        selectedFileForMenu.uri,
+        selectedFileForMenu.mimeType,
+        selectedFileForMenu.name
+      );
+    } catch (err: any) {
+      Alert.alert('Share Failed', err?.message || 'Could not share file');
+    }
+  };
+
+  const handleMenuDelete = () => {
+    if (!selectedFileForMenu) return;
+    const targetFile = selectedFileForMenu;
+    Alert.alert(
+      'Delete Document',
+      `Are you sure you want to delete "${targetFile.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteFile(targetFile.uri);
+              loadFiles();
+            } catch (err: any) {
+              Alert.alert('Delete Failed', err?.message || 'Could not delete file');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRenameSave = async (newName: string) => {
+    if (!selectedFileForMenu) return;
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      Alert.alert('Invalid Name', 'Document name cannot be empty');
+      return;
+    }
+    try {
+      setIsRenaming(true);
+      await renameFile(selectedFileForMenu.uri, trimmed);
+      setIsRenameVisible(false);
+      loadFiles();
+    } catch (err: any) {
+      Alert.alert('Rename Failed', err?.message || 'Could not rename file');
+    } finally {
+      setIsRenaming(false);
+    }
+  };
+
   const renderItem = ({ item }: { item: ScannedFile }) => (
     <FileListItem
       name={item.name}
@@ -132,6 +207,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
       time={formatTime(item.modifiedDate)}
       icon={getIconForExtension(item.extension)}
       onPress={() => handleFilePress(item)}
+      onMorePress={(pos) => handleMorePress(item, pos)}
     />
   );
 
@@ -168,6 +244,30 @@ const FileListScreen = ({ route, navigation }: Props) => {
           ListEmptyComponent={renderEmpty}
         />
       )}
+
+      {/* 3-Dots Action Menu Modal */}
+      <FileActionMenuModal
+        visible={isMenuVisible}
+        anchorPosition={menuAnchorPosition}
+        onClose={() => setIsMenuVisible(false)}
+        onToggleFavorite={() => {}}
+        onRename={() => setIsRenameVisible(true)}
+        onDelete={handleMenuDelete}
+        onShare={handleMenuShare}
+      />
+
+      {/* Rename Modal */}
+      <RenameModal
+        visible={isRenameVisible}
+        initialName={
+          selectedFileForMenu
+            ? selectedFileForMenu.name.replace(/\.[^/.]+$/, '') || selectedFileForMenu.name
+            : ''
+        }
+        isRenaming={isRenaming}
+        onClose={() => setIsRenameVisible(false)}
+        onSave={handleRenameSave}
+      />
     </View>
   );
 };

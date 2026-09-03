@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList, ScannedFile } from '../types/types';
 import FileListHeader from '../components/FileListHeader';
 import FileListItem from '../components/ui/FileListItem';
@@ -106,9 +107,11 @@ const FileListScreen = ({ route, navigation }: Props) => {
     }
   }, [fileType]);
 
-  useEffect(() => {
-    loadFiles();
-  }, [loadFiles]);
+  useFocusEffect(
+    useCallback(() => {
+      loadFiles();
+    }, [loadFiles])
+  );
 
   const handleFilePress = (file: ScannedFile) => {
     if (UNSUPPORTED_VIEWER_EXTENSIONS.includes(file.extension)) {

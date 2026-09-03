@@ -20,7 +20,8 @@ import Pdf from 'react-native-pdf';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/types';
+import { RootStackParamList, ScannedFile } from '../types/types';
+import { deleteFile, renameFile, shareFile } from '../services/FileScanner';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FileViewer'>;
 
@@ -31,6 +32,7 @@ const DocumentViewerScreen = ({ route, navigation }: Props) => {
   const pdfRef = useRef<any>(null);
 
   // File states
+  const [currentFile, setCurrentFile] = useState<ScannedFile>(file);
   const [fileName, setFileName] = useState<string>(file.name || 'Document');
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
@@ -46,10 +48,11 @@ const DocumentViewerScreen = ({ route, navigation }: Props) => {
   // Rename Modal state
   const [isRenameModalVisible, setIsRenameModalVisible] = useState<boolean>(false);
   const [renameInput, setRenameInput] = useState<string>(file.name || '');
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
 
   // Text file states
-  const ext = (file.extension || '').toLowerCase();
-  const mime = (file.mimeType || '').toLowerCase();
+  const ext = (currentFile.extension || '').toLowerCase();
+  const mime = (currentFile.mimeType || '').toLowerCase();
   const isPdf = ext === 'pdf' || mime === 'application/pdf';
   const isText = ext === 'txt' || mime === 'text/plain';
 
@@ -64,7 +67,7 @@ const DocumentViewerScreen = ({ route, navigation }: Props) => {
         try {
           setLoadingText(true);
           setTextError(null);
-          const path = decodeURIComponent(file.uri.replace(/^file:\/\//, ''));
+          const path = decodeURIComponent(currentFile.uri.replace(/^file:\/\//, ''));
           const data = await ReactNativeBlobUtil.fs.readFile(path, 'utf8');
           if (isMounted) {
             setTextContent(data);
@@ -84,22 +87,19 @@ const DocumentViewerScreen = ({ route, navigation }: Props) => {
         isMounted = false;
       };
     }
-  }, [file.uri, isText]);
+  }, [currentFile.uri, isText]);
 
   // Share handler
   const handleShare = async () => {
     try {
-      await Share.share({
-        title: fileName,
-        message: `Sharing ${fileName}`,
-        url: file.uri,
-      });
+      await shareFile(currentFile.uri, currentFile.mimeType, fileName);
     } catch (error: any) {
       console.log('Error sharing document:', error);
+      Alert.alert('Share Failed', error?.message || 'Could not share file');
     }
   };
 
-  // Toggle favorite
+  // Toggle favorite (UI state for now until Favorite screen is built)
   const handleToggleFavorite = () => {
     setIsFavorite((prev) => !prev);
   };
@@ -141,14 +141,12 @@ const DocumentViewerScreen = ({ route, navigation }: Props) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              if (file.uri.startsWith('file://')) {
-                const path = decodeURIComponent(file.uri.replace(/^file:\/\//, ''));
-                await ReactNativeBlobUtil.fs.unlink(path);
-              }
-            } catch (err) {
-              console.log('Could not unlink file:', err);
+              await deleteFile(currentFile.uri);
+              navigation.goBack();
+            } catch (err: any) {
+              console.error('Delete error:', err);
+              Alert.alert('Delete Failed', err?.message || 'Could not delete file');
             }
-            navigation.goBack();
           },
         },
       ]
@@ -156,14 +154,24 @@ const DocumentViewerScreen = ({ route, navigation }: Props) => {
   };
 
   // Rename document
-  const handleRenameSubmit = () => {
+  const handleRenameSubmit = async () => {
     const trimmed = renameInput.trim();
     if (!trimmed) {
       Alert.alert('Invalid Name', 'Document name cannot be empty');
       return;
     }
-    setFileName(trimmed);
-    setIsRenameModalVisible(false);
+    try {
+      setIsRenaming(true);
+      const updated = await renameFile(currentFile.uri, trimmed);
+      setCurrentFile(updated);
+      setFileName(updated.name);
+      setIsRenameModalVisible(false);
+    } catch (err: any) {
+      console.error('Rename error:', err);
+      Alert.alert('Rename Failed', err?.message || 'Could not rename file');
+    } finally {
+      setIsRenaming(false);
+    }
   };
 
   return (
@@ -213,7 +221,7 @@ const DocumentViewerScreen = ({ route, navigation }: Props) => {
               <>
                 <Pdf
                   ref={pdfRef}
-                  source={{ uri: file.uri, cache: true }}
+                  source={{ uri: currentFile.uri, cache: true }}
                   style={styles.pdf}
                   fitPolicy={0}
                   spacing={12}
@@ -291,7 +299,8 @@ const DocumentViewerScreen = ({ route, navigation }: Props) => {
         <TouchableOpacity
           style={styles.toolbarItem}
           onPress={() => {
-            setRenameInput(fileName);
+            const baseName = currentFile.name.replace(/\.[^/.]+$/, '');
+            setRenameInput(baseName || currentFile.name);
             setIsRenameModalVisible(true);
           }}
           activeOpacity={0.7}

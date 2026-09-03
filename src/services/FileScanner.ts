@@ -56,7 +56,26 @@ export async function requestStoragePermission(): Promise<boolean> {
     }
   }
 
-  // Android ≤ 12 (API ≤ 32): use READ_EXTERNAL_STORAGE
+  // Android ≤ 29 (Android 10 and below): request both READ and WRITE external storage
+  if (Platform.Version <= 29) {
+    try {
+      const granted = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+      ]);
+      const isReadGranted =
+        granted[PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE] ===
+        PermissionsAndroid.RESULTS.GRANTED;
+      const isWriteGranted =
+        granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] ===
+        PermissionsAndroid.RESULTS.GRANTED;
+      return isReadGranted && isWriteGranted;
+    } catch {
+      return false;
+    }
+  }
+
+  // Android 30 to 32: READ_EXTERNAL_STORAGE
   if (Platform.Version <= 32) {
     try {
       const granted = await PermissionsAndroid.request(
@@ -95,3 +114,47 @@ export async function scanFiles(fileType: string): Promise<ScannedFile[]> {
   const results: ScannedFile[] = await FileScannerModule.scanFiles(fileType);
   return results;
 }
+
+/**
+ * Delete a file on storage via the native module.
+ * @param uri - file URI or content URI
+ */
+export async function deleteFile(uri: string): Promise<boolean> {
+  if (!FileScannerModule?.deleteFile) {
+    throw new Error('FileScannerModule.deleteFile is not available.');
+  }
+  await requestStoragePermission();
+  return await FileScannerModule.deleteFile(uri);
+}
+
+/**
+ * Rename a file on storage via the native module.
+ * @param uri - file URI or content URI
+ * @param newName - target file name (with or without extension)
+ */
+export async function renameFile(uri: string, newName: string): Promise<ScannedFile> {
+  if (!FileScannerModule?.renameFile) {
+    throw new Error('FileScannerModule.renameFile is not available.');
+  }
+  await requestStoragePermission();
+  return await FileScannerModule.renameFile(uri, newName);
+}
+
+/**
+ * Share a file as an attachment via native Intent and FileProvider.
+ * @param uri - file URI or content URI
+ * @param mimeType - file MIME type
+ * @param title - file title
+ */
+export async function shareFile(
+  uri: string,
+  mimeType?: string,
+  title?: string
+): Promise<boolean> {
+  if (!FileScannerModule?.shareFile) {
+    throw new Error('FileScannerModule.shareFile is not available.');
+  }
+  return await FileScannerModule.shareFile(uri, mimeType || '', title || '');
+}
+
+

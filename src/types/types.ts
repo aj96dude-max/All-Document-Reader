@@ -9,6 +9,7 @@ export type ScannedFile = {
 };
 
 export type RootStackParamList = {
+  Splash: undefined;
   MainTabs: undefined;
   FileList: {
     fileType: string;

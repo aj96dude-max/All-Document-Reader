@@ -1,97 +1,199 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 📄 AllDocumentReader
 
-# Getting Started
+A React Native Android app to scan, browse, view, and manage all your documents — PDF, Word, Excel, PowerPoint, TXT, EPUB, and RTF — in one place.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## ✨ Features
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- **📂 File Scanning** — Scans the entire device storage for documents using a high-performance native Kotlin module (MediaStore API)
+- **📖 Built-in PDF Viewer** — Read PDF files with page navigation, jump-to-page, and page indicator
+- **📝 Text File Viewer** — View `.txt` files directly in-app
+- **⭐ Favorites** — Mark documents as favorites for quick access
+- **🕐 Recent Documents** — Automatically tracks your last 50 opened documents
+- **🗑️ Trash** — Soft-delete with 30-day auto-purge and restore capability
+- **✏️ Rename** — Rename files directly from the app
+- **📤 Share** — Share documents via Android Intent
+- **🔍 Search** — Search through file lists by name
+- **⚙️ Settings** — Keep Screen On toggle, privacy policy, share app, rate us
+- **📱 Side Menu** — Animated drawer with quick actions
+- **🎨 Custom Splash Screen** — Animated splash with document-type watermarks
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+---
 
-```sh
-# Using npm
+## 📸 Screenshots
+
+The `ui/` directory contains design mockups for all screens:  
+Splash, Home, File List, Document Viewer, Favorites, Settings, Trash, Search, Side Menu, and more.
+
+---
+
+## 🏗️ Tech Stack
+
+| Technology | Version |
+|------------|---------|
+| React Native | 0.87.1 |
+| React | 19.2.3 |
+| TypeScript | 6.x |
+| Kotlin | Native module |
+| React Navigation | 7.x |
+| react-native-pdf | 7.x |
+| react-native-blob-util | 0.24.x |
+| Hermes | Default JS engine |
+
+---
+
+## 📁 Project Structure
+
+```
+AllDocumentReader/
+├── src/
+│   ├── App.tsx                 # Root — navigation setup
+│   ├── screens/                # 8 screens (Splash, Home, FileList, Viewer, Favorites, Settings, Trash, AllFiles)
+│   ├── components/             # Reusable components organized by feature
+│   │   ├── common/             # Loading spinner, shared primitives
+│   │   ├── home/               # Tools grid, recent documents
+│   │   ├── ui/                 # File list items, action menus
+│   │   ├── viewer/             # Viewer header, toolbar, modals, page indicator
+│   │   └── settings/           # Setting item component
+│   ├── services/               # Business logic & JSON persistence
+│   │   ├── FileScanner.ts      # Native module bridge
+│   │   ├── FavoritesService.ts # Favorites CRUD
+│   │   ├── RecentDocumentsService.ts
+│   │   ├── TrashService.ts     # 30-day auto-delete trash
+│   │   ├── SettingsService.ts  # App settings + utility actions
+│   │   └── fileHelpers.ts      # Formatting utilities
+│   ├── types/                  # TypeScript definitions
+│   └── utils/                  # Utility functions
+├── Assets/                     # Icons, tab images, splash graphics
+├── android/                    # Android native project
+│   └── .../FileScannerModule.kt  # Custom Kotlin native module
+├── W2P/                        # OfflineDocConverter module (standalone, future integration)
+├── project_context.md          # Full project context & architecture documentation
+├── AGENT.md                    # Development guidelines & best practices
+└── ui/                         # UI design mockup screenshots
+```
+
+> 📖 See [`project_context.md`](project_context.md) for comprehensive architecture details.  
+> 🤖 See [`AGENT.md`](AGENT.md) for coding standards and best practices.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js** >= 22.11.0
+- **JDK** 17+
+- **Android Studio** with Android SDK
+- **React Native CLI** environment set up ([guide](https://reactnative.dev/docs/set-up-your-environment))
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repo-url>
+cd AllDocumentReader
+
+# Install dependencies
+npm install
+```
+
+### Running the App
+
+#### 1. Start Metro Bundler
+
+```bash
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+#### 2. Run on Android
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
+#### 3. Run on iOS (secondary target)
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
+```bash
+# Install CocoaPods (first time only)
 bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
 bundle exec pod install
-```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 📜 Available Scripts
 
-## Step 3: Modify your app
+| Script | Description |
+|--------|-------------|
+| `npm start` | Start Metro dev server |
+| `npm run android` | Build & run on Android device/emulator |
+| `npm run ios` | Build & run on iOS simulator |
+| `npm run lint` | Run ESLint checks |
+| `npm test` | Run Jest tests |
 
-Now that you have successfully run the app, let's make changes!
+---
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## 🧭 Navigation
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+```
+Stack Navigator
+├── Splash Screen        → Auto-navigates after 2.5s
+├── Main Tabs (Bottom Tab Navigator)
+│   ├── Home             → File type tools grid + recent documents
+│   ├── Favorites        → Starred files
+│   └── Settings         → Keep Screen On, Trash, Privacy, Share, Rate
+├── File List            → Filtered by type (pdf, word, excel, etc.)
+├── Document Viewer      → PDF/TXT viewer with actions
+└── Trash                → Soft-deleted files with 30-day countdown
+```
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+---
 
-## Congratulations! :tada:
+## 📱 Supported File Types
 
-You've successfully run and modified your React Native App. :partying_face:
+| Format | Extensions | In-App Viewing |
+|--------|-----------|----------------|
+| PDF | `.pdf` | ✅ Built-in |
+| Plain Text | `.txt` | ✅ Built-in |
+| Word | `.doc`, `.docx` | Opens externally |
+| Excel | `.xls`, `.xlsx` | Opens externally |
+| PowerPoint | `.ppt`, `.pptx` | Opens externally |
+| eBook | `.epub` | Scan only |
+| Rich Text | `.rtf` | Scan only |
 
-### Now what?
+---
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+## 🔌 Native Module
 
-# Troubleshooting
+The app includes a custom **Kotlin native module** (`FileScannerModule`) that provides:
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+- Device-wide file scanning via Android MediaStore API
+- File delete, rename, and share via ContentResolver + Intent
+- Keep Screen On toggle via WindowManager flags
+- Android 11+ (API 30) `MANAGE_EXTERNAL_STORAGE` permission handling
 
-# Learn More
+---
 
-To learn more about React Native, take a look at the following resources:
+## 📦 W2P — OfflineDocConverter (Future)
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+The `W2P/` directory contains a standalone Android module for **offline document-to-PDF conversion** supporting 30+ file formats. It is not yet integrated into the main app but is planned for future releases to enable in-app viewing and conversion of Word, Excel, PPT, and other formats.
+
+---
+
+## 🤝 Contributing
+
+1. Read [`AGENT.md`](AGENT.md) for coding guidelines.
+2. Read [`project_context.md`](project_context.md) for architecture context.
+3. Follow the established patterns for components, services, and types.
+4. Run `npm run lint` before submitting changes.
+5. Update documentation when making structural changes.
+
+---
+
+## 📄 License
+
+Private project — All rights reserved.

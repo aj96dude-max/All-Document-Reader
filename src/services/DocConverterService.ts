@@ -11,7 +11,9 @@ const { DocConverterModule } = NativeModules;
 export const CONVERTIBLE_EXTENSIONS = [
   'docx', 'pptx', 'xlsx', 'epub', 'rtf', 'md',
   'doc', 'ppt', 'xls',
-  'csv', 'tsv',
+  'csv', 'tsv', 'json', 'xml', 'tex',
+  'jpg', 'png', 'webp', 'gif', 'bmp',
+  'java', 'kt', 'py', 'c', 'cpp', 'html', 'js', 'css', 'yaml', 'yml', 'sh', 'swift', 'rb', 'go', 'rs', 'php'
 ];
 
 /**

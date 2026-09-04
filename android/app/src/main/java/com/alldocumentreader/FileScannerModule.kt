@@ -74,7 +74,15 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
                 "text/plain",
                 "application/epub+zip",
                 "application/rtf",
-                "text/rtf"
+                "text/rtf",
+                "text/markdown", "text/x-tex",
+                "text/csv", "text/comma-separated-values", "text/tab-separated-values",
+                "application/json", "application/xml", "text/xml",
+                "image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp",
+                "text/x-java-source", "text/x-java", "text/x-kotlin", "text/x-python",
+                "text/x-c", "text/x-c++", "text/html", "application/javascript", "text/javascript",
+                "text/css", "application/x-yaml", "text/yaml", "application/x-sh",
+                "text/x-swift", "text/x-ruby", "text/x-go", "text/rust", "application/x-httpd-php", "text/x-php"
             )
             "pdf" -> listOf("application/pdf")
             "word" -> listOf(
@@ -98,7 +106,12 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
 
     private fun getExtensionsForFileType(fileType: String): Set<String> {
         return when (fileType) {
-            "all" -> setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "epub", "rtf")
+            "all" -> setOf(
+                "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "epub", "rtf",
+                "md", "tex", "csv", "tsv", "json", "xml",
+                "jpg", "jpeg", "png", "webp", "gif", "bmp",
+                "java", "kt", "py", "c", "cpp", "html", "js", "css", "yaml", "yml", "sh", "swift", "rb", "go", "rs", "php"
+            )
             "pdf" -> setOf("pdf")
             "word" -> setOf("doc", "docx")
             "excel" -> setOf("xls", "xlsx")
@@ -122,6 +135,32 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
             "text/plain" -> "txt"
             "application/epub+zip" -> "epub"
             "application/rtf", "text/rtf" -> "rtf"
+            "text/markdown" -> "md"
+            "text/x-tex" -> "tex"
+            "text/csv", "text/comma-separated-values" -> "csv"
+            "text/tab-separated-values" -> "tsv"
+            "application/json" -> "json"
+            "application/xml", "text/xml" -> "xml"
+            "image/jpeg" -> "jpg"
+            "image/png" -> "png"
+            "image/webp" -> "webp"
+            "image/gif" -> "gif"
+            "image/bmp" -> "bmp"
+            "text/x-java-source", "text/x-java" -> "java"
+            "text/x-kotlin" -> "kt"
+            "text/x-python" -> "py"
+            "text/x-c" -> "c"
+            "text/x-c++" -> "cpp"
+            "text/html" -> "html"
+            "application/javascript", "text/javascript" -> "js"
+            "text/css" -> "css"
+            "application/x-yaml", "text/yaml" -> "yaml"
+            "application/x-sh" -> "sh"
+            "text/x-swift" -> "swift"
+            "text/x-ruby" -> "rb"
+            "text/x-go" -> "go"
+            "text/rust" -> "rs"
+            "application/x-httpd-php", "text/x-php" -> "php"
             else -> ""
         }
     }

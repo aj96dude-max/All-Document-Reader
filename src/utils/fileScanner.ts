@@ -15,7 +15,12 @@ const getExtension = (filename: string) => {
 
 const isValidType = (ext: string, requestedType: string) => {
   if (requestedType === 'all') {
-    return ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'epub', 'rtf'].includes(ext);
+    return [
+      'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'epub', 'rtf', 'md', 'tex',
+      'csv', 'tsv', 'json', 'xml',
+      'jpg', 'png', 'webp', 'gif', 'bmp',
+      'java', 'kt', 'py', 'c', 'cpp', 'html', 'js', 'css', 'yaml', 'yml', 'sh', 'swift', 'rb', 'go', 'rs', 'php'
+    ].includes(ext);
   }
   
   if (requestedType === 'word') {

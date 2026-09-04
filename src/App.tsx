@@ -11,7 +11,7 @@ import DocumentViewerScreen from './screens/DocumentViewerScreen';
 import TrashScreen from './screens/TrashScreen';
 import SideMenu from './components/SideMenu';
 import { RootStackParamList } from './types/types';
-import { Image } from 'react-native';
+import { Image, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import CustomHeader from './components/CustomHeader';
 import { initSettings } from './services/SettingsService';
@@ -36,6 +36,12 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
       screenOptions={{
         tabBarActiveTintColor: '#ED1C24',
         tabBarInactiveTintColor: '#A7A7A7',
+        tabBarButton: (props) => (
+          <TouchableOpacity 
+          {...props}
+          activeOpacity={0.8}
+          />
+        )
       }}
     >
       <Tab.Screen

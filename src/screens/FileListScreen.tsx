@@ -8,6 +8,7 @@ import {
   Image,
   StatusBar,
 } from 'react-native';
+
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList, ScannedFile } from '../types/types';
@@ -34,7 +35,7 @@ import {
   getIconForExtension,
 } from '../services/fileHelpers';
 
-import EmptyFolderIcon from '../../Assets/svgicons/Empty Folder.svg';
+import LottieView from 'lottie-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FileList'>;
 
@@ -177,10 +178,11 @@ const FileListScreen = ({ route, navigation }: Props) => {
 
   const renderEmpty = () => (
     <View style={styles.center}>
-      <EmptyFolderIcon
-        width={120}
-        height={120}
-        style={styles.emptyImage as any}
+      <LottieView
+        source={require('../../Assets/anim/Empety Documents Jason File.json')}
+        autoPlay
+        loop
+        style={{ width: 150, height: 150, marginBottom: 16 }}
       />
       <Text style={styles.emptyText}>No Documents Yet!</Text>
     </View>

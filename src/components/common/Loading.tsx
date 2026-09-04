@@ -2,25 +2,25 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   StyleProp,
   ViewStyle,
   TextStyle,
   ImageStyle,
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 
 export interface LoadingProps {
   /** Text message to display under the loader */
   message?: string;
   /** Optional secondary helper text */
   subMessage?: string;
-  /** Size (width and height) of the loader gif in pixels. Defaults to 120 */
+  /** Size (width and height) of the loader in pixels. Defaults to 120 */
   size?: number;
   /** Style for the container view */
   style?: StyleProp<ViewStyle>;
-  /** Style for the GIF image */
-  imageStyle?: StyleProp<ImageStyle>;
+  /** Style for the animation view */
+  imageStyle?: StyleProp<ViewStyle>; // Changed from ImageStyle to ViewStyle
   /** Style for the message text */
   textStyle?: StyleProp<TextStyle>;
   /** Style for the sub-message text */
@@ -38,10 +38,11 @@ const Loading: React.FC<LoadingProps> = ({
 }) => {
   return (
     <View style={[styles.container, style]}>
-      <Image
-        source={require('../../../Assets/loading.gif')}
+      <LottieView
+        source={require('../../../Assets/anim/loading-animation.json')}
+        autoPlay
+        loop
         style={[{ width: size, height: size }, styles.gif, imageStyle]}
-        resizeMode="contain"
       />
       {Boolean(message) && (
         <Text style={[styles.message, textStyle]}>{message}</Text>

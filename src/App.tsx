@@ -119,7 +119,7 @@ const App = () => {
           <Stack.Screen
             name="FileList"
             component={FileListScreen}
-            options={({ route }: any) => ({
+            options={() => ({
               headerShown: false,
             })}
           />

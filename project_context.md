@@ -92,6 +92,7 @@ AllDocumentReader/
 │   │
 │   ├── services/                   # Business logic & data persistence
 │   │   ├── FileScanner.ts         # Native module bridge — scan, delete, rename, share, keepScreenOn
+│   │   ├── DocConverterService.ts # W2P converter bridge — document-to-PDF conversion + caching
 │   │   ├── FavoritesService.ts    # Favorites CRUD (favorites.json)
 │   │   ├── RecentDocumentsService.ts # Recent docs CRUD (recent_documents.json, max 50)
 │   │   ├── TrashService.ts        # Trash CRUD with 30-day auto-delete (trash.json)
@@ -116,16 +117,16 @@ AllDocumentReader/
 ├── android/                        # Android native project
 │   └── app/src/main/java/com/alldocumentreader/
 │       ├── FileScannerModule.kt   # ★ Custom native module (file scanning via MediaStore, delete, rename, share, keepScreenOn)
-│       ├── FileScannerPackage.kt  # React Native package registration
+│       ├── DocConverterModule.kt  # ★ W2P bridge module (offline document-to-PDF conversion)
+│       ├── FileScannerPackage.kt  # React Native package registration (both modules)
 │       ├── MainActivity.kt       # Main activity
 │       └── MainApplication.kt    # Application class
 │
 ├── W2P/                            # ★ Standalone Android module: OfflineDocConverter
 │   │                               #   Converts various document formats to PDF (offline, zero-dependency)
-│   │                               #   NOT currently integrated into the React Native app
-│   │                               #   Planned for future integration
+│   │                               #   INTEGRATED into the React Native app via DocConverterModule
 │   ├── app/                       # Android app module (demo/test shell)
-│   ├── docx2pdf/                  # Core conversion library
+│   ├── docx2pdf/                  # Core conversion library (included as Gradle dependency)
 │   ├── presentation/              # Presentation layer
 │   └── README.md                  # Detailed docs on supported formats
 │
@@ -219,7 +220,14 @@ JSON file-based settings at `DocumentDir/app_settings.json`:
 - **Utility actions:** `openPrivacyPolicy()`, `shareApp()`, `rateApp()`
 - **Init:** `initSettings()` — Called on app start, applies saved settings
 
-### 6.6 fileHelpers (`services/fileHelpers.ts`)
+### 6.6 DocConverterService (`services/DocConverterService.ts`)
+TypeScript bridge to the native `DocConverterModule` (W2P library). Provides:
+- **`isConvertibleExtension(ext)`** — Check if a file extension can be converted to PDF
+- **`convertToPdf(inputUri, fileName)`** — Convert a document to PDF, with file-based caching
+- **`clearConversionCache()`** — Clear all cached converted PDFs
+- Cache location: `CacheDir/converted_pdfs/` — uses URI-based hash keys to avoid re-conversion
+
+### 6.7 fileHelpers (`services/fileHelpers.ts`)
 Pure utility functions:
 - `formatBytes()`, `formatDate()`, `formatTime()`
 - `getIconForExtension()`, `getBgColorForExtension()`
@@ -242,6 +250,14 @@ A custom Kotlin native module (`com.alldocumentreader.FileScannerModule`) regist
 | `shareFile(uri, mimeType, title)` | Shares via Intent + FileProvider |
 | `setKeepScreenOn(enable)` | Sets/clears `FLAG_KEEP_SCREEN_ON` on current Activity window |
 | `isKeepScreenOn()` | Checks if flag is currently set |
+
+### DocConverterModule.kt
+A custom Kotlin native module (`com.alldocumentreader.DocConverterModule`) that bridges the W2P `OfflineDocConverterImpl` library:
+
+| Method | Description |
+|--------|-------------|
+| `convertToPdf(inputUri, outputPath)` | Converts a document to PDF offline, writes to the given output path |
+| `isConversionSupported(extension)` | Checks if a file extension is supported for conversion |
 
 **Package ID:** `com.alldocumentreader`  
 **Min SDK:** Defined in root `build.gradle` (`rootProject.ext.minSdkVersion`)
@@ -267,21 +283,26 @@ All app data is persisted as **JSON files** in the app's `DocumentDir` (via `rea
 |----------|-----------|-----------------|
 | PDF | `.pdf` | ✅ Built-in viewer (`react-native-pdf`) |
 | Plain Text | `.txt` | ✅ Built-in viewer (`TextDocumentViewer`) |
-| Word | `.doc`, `.docx` | ❌ Opens externally (unsupported in-app) |
-| Excel | `.xls`, `.xlsx` | ❌ Opens externally (unsupported in-app) |
-| PowerPoint | `.ppt`, `.pptx` | ❌ Opens externally (unsupported in-app) |
-| eBook | `.epub` | 🔲 Scanned but no in-app viewer yet |
-| Rich Text | `.rtf` | 🔲 Scanned but no in-app viewer yet |
+| Word | `.docx` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Word (legacy) | `.doc` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Excel | `.xlsx` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Excel (legacy) | `.xls` | ✅ Convert to PDF → built-in viewer (W2P) |
+| PowerPoint | `.pptx` | ✅ Convert to PDF → built-in viewer (W2P) |
+| PowerPoint (legacy) | `.ppt` | ✅ Convert to PDF → built-in viewer (W2P) |
+| eBook | `.epub` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Rich Text | `.rtf` | ✅ Convert to PDF → built-in viewer (W2P) |
 
 ---
 
-## 10. W2P Module (Future)
+## 10. W2P Module (Integrated)
 
-The `W2P/` directory contains **OfflineDocConverter** — a standalone Android/Kotlin library for converting documents to PDF offline. It is a **separate module with its own Git repository** and is **not currently integrated** into the React Native app.
+The `W2P/` directory contains **OfflineDocConverter** — a standalone Android/Kotlin library for converting documents to PDF offline. It is **integrated into the React Native app** as a local Gradle module dependency.
 
-**Planned use:** Will be integrated as a native module to add format conversion capabilities (Word → PDF, PPT → PDF, etc.) and potentially enable in-app viewing of currently unsupported formats.
+**Integration architecture:** `W2P/docx2pdf` → Gradle dependency → `DocConverterModule.kt` (native bridge) → `DocConverterService.ts` (JS service with caching) → `DocumentViewerScreen.tsx` (convert-then-view flow).
 
 **Supported formats:** `.docx`, `.pptx`, `.xlsx`, `.epub`, `.rtf`, `.md`, `.txt`, `.tex`, `.csv`, `.tsv`, `.json`, `.xml`, images, source code files, and native PDF pass-through.
+
+**Caching:** Converted PDFs are cached in `CacheDir/converted_pdfs/` using URI-based hash keys. Repeated opens of the same file use the cached PDF without re-conversion.
 
 ---
 

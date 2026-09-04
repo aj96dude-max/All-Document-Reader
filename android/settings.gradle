@@ -3,4 +3,6 @@ plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'AllDocumentReader'
 include ':app'
+include ':docx2pdf'
+project(':docx2pdf').projectDir = new File(rootProject.projectDir, '../W2P/docx2pdf')
 includeBuild('../node_modules/@react-native/gradle-plugin')

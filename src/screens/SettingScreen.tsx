@@ -4,9 +4,6 @@ import {
   View,
   ScrollView,
   StatusBar,
-  Share,
-  Linking,
-  Alert,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';

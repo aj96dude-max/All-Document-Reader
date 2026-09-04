@@ -7,7 +7,7 @@ import com.facebook.react.uimanager.ViewManager
 
 class FileScannerPackage : ReactPackage {
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(FileScannerModule(reactContext))
+        return listOf(FileScannerModule(reactContext), DocConverterModule(reactContext))
     }
 
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {

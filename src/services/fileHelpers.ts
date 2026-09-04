@@ -1,14 +1,5 @@
 import { ImageSourcePropType } from 'react-native';
 
-export const UNSUPPORTED_VIEWER_EXTENSIONS = [
-  'ppt',
-  'pptx',
-  'doc',
-  'docx',
-  'xls',
-  'xlsx',
-];
-
 export const formatBytes = (bytes: number): string => {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;

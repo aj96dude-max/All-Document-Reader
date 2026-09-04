@@ -18,13 +18,11 @@ import RenameModal from '../viewer/RenameModal';
 import {
   getRecentDocuments,
   addRecentDocument,
-  removeRecentDocument,
   updateRecentDocument,
 } from '../../services/RecentDocumentsService';
 import {
   isFavorite as checkIsFavorite,
   toggleFavorite,
-  removeFavorite,
   updateFavoriteFile,
 } from '../../services/FavoritesService';
 import { renameFile, shareFile } from '../../services/FileScanner';
@@ -34,7 +32,6 @@ import {
   formatDate,
   formatTime,
   getIconForExtension,
-  UNSUPPORTED_VIEWER_EXTENSIONS,
 } from '../../services/fileHelpers';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -70,13 +67,6 @@ const RecentDocuments = () => {
   );
 
   const handleFilePress = async (file: ScannedFile) => {
-    if (UNSUPPORTED_VIEWER_EXTENSIONS.includes((file.extension || '').toLowerCase())) {
-      Alert.alert(
-        'Unsupported Format',
-        `Viewing ${file.extension.toUpperCase()} files is not supported yet.`
-      );
-      return;
-    }
     // Bump recent order
     await addRecentDocument(file);
     navigation.navigate('FileViewer', { file });

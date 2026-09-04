@@ -20,9 +20,11 @@ When making changes that affect the project structure, add new screens/services/
 - **Update `README.md`** — Reflect new features, setup steps, or dependency changes.
 
 ### 1.3 W2P Module
-- The `W2P/` directory is a **separate standalone Android module** for offline document-to-PDF conversion.
-- It is **not currently integrated** into the React Native app but is planned for future use.
-- **Do not modify W2P** unless specifically asked. Do not import or reference it from the main app code yet.
+- The `W2P/docx2pdf/` library is **integrated as a local Gradle module dependency** providing offline document-to-PDF conversion.
+- It is bridged to JS via `DocConverterModule` (Kotlin) → `DocConverterService.ts` (TypeScript).
+- Supported convertible formats: `.docx`, `.pptx`, `.xlsx`, `.epub`, `.rtf`, `.md`, `.doc`, `.ppt`, `.xls`, `.csv`, `.tsv`, and others.
+- Converted PDFs are **cached** in the app's cache directory to avoid re-conversion on repeated opens.
+- **Do not modify W2P library source** (`W2P/docx2pdf/`) unless specifically asked — changes should go in the bridge module (`DocConverterModule.kt`) or service (`DocConverterService.ts`).
 
 ### 1.4 Native Module
 - The app uses a custom Kotlin native module `FileScannerModule` for all file system operations (scan, delete, rename, share, keep screen on).

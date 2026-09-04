@@ -1,10 +1,8 @@
 import React from 'react';
-import { Vibration, View } from 'react-native';
+import { View } from 'react-native';
 
 const pdfViewerScreen = () => {
-  return <View>
-    
-  </View>;
+  return <View />;
 };
 
 export default pdfViewerScreen;

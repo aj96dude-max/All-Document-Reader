@@ -44,7 +44,7 @@ const scanDirectory = async (dirPath: string, requestedType: string): Promise<Fi
           try {
             const subResults = await scanDirectory(item.path, requestedType);
             results = results.concat(subResults);
-          } catch (e) {
+          } catch {
             // Ignore errors for unreadable directories
           }
         }

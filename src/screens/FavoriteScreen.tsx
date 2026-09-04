@@ -25,7 +25,6 @@ import {
 } from '../services/FavoritesService';
 import {
   addRecentDocument,
-  removeRecentDocument,
   updateRecentDocument,
 } from '../services/RecentDocumentsService';
 import {
@@ -33,7 +32,6 @@ import {
   formatDate,
   formatTime,
   getIconForExtension,
-  UNSUPPORTED_VIEWER_EXTENSIONS,
 } from '../services/fileHelpers';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -76,13 +74,6 @@ const FavoriteScreen = () => {
   );
 
   const handleFilePress = async (file: ScannedFile) => {
-    if (UNSUPPORTED_VIEWER_EXTENSIONS.includes((file.extension || '').toLowerCase())) {
-      Alert.alert(
-        'Unsupported Format',
-        `Viewing ${file.extension.toUpperCase()} files is not supported yet.`
-      );
-      return;
-    }
     await addRecentDocument(file);
     navigation.navigate('FileViewer', { file });
   };

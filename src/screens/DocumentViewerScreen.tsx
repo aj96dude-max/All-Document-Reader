@@ -17,14 +17,16 @@ import { moveToTrash } from '../services/TrashService';
 import {
   isFavorite as checkIsFavorite,
   toggleFavorite as toggleFavoriteStorage,
-  removeFavorite,
   updateFavoriteFile,
 } from '../services/FavoritesService';
 import {
   addRecentDocument,
-  removeRecentDocument,
   updateRecentDocument,
 } from '../services/RecentDocumentsService';
+import {
+  isConvertibleExtension,
+  convertToPdf,
+} from '../services/DocConverterService';
 
 import DocumentHeader from '../components/viewer/DocumentHeader';
 import DocumentBottomToolbar from '../components/viewer/DocumentBottomToolbar';
@@ -61,10 +63,16 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const mime = (currentFile.mimeType || '').toLowerCase();
   const isPdf = ext === 'pdf' || mime === 'application/pdf';
   const isText = ext === 'txt' || mime === 'text/plain';
+  const needsConversion = !isPdf && !isText && isConvertibleExtension(ext);
 
   const [textContent, setTextContent] = useState<string>('');
   const [loadingText, setLoadingText] = useState<boolean>(isText);
   const [textError, setTextError] = useState<string | null>(null);
+
+  // Conversion states
+  const [isConverting, setIsConverting] = useState<boolean>(needsConversion);
+  const [convertedPdfPath, setConvertedPdfPath] = useState<string | null>(null);
+  const [conversionError, setConversionError] = useState<string | null>(null);
 
   // Record into Recent Documents & Check initial favorite status
   useEffect(() => {
@@ -84,7 +92,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
     return () => {
       isMounted = false;
     };
-  }, [currentFile.uri]);
+  }, [currentFile]);
 
   // Load text file content
   useEffect(() => {
@@ -115,6 +123,48 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
       };
     }
   }, [currentFile.uri, isText]);
+
+  // Convert document to PDF for in-app viewing
+  useEffect(() => {
+    if (needsConversion) {
+      let isMounted = true;
+      const runConversion = async () => {
+        try {
+          setIsConverting(true);
+          setConversionError(null);
+          const pdfPath = await convertToPdf(currentFile.uri, currentFile.name);
+          if (isMounted) {
+            setConvertedPdfPath(pdfPath);
+          }
+        } catch (err: any) {
+          console.error('Document conversion error:', err);
+          if (isMounted) {
+            setConversionError(
+              err?.message || `Failed to convert ${ext.toUpperCase()} file to PDF`
+            );
+          }
+        } finally {
+          if (isMounted) {
+            setIsConverting(false);
+          }
+        }
+      };
+      runConversion();
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [currentFile.uri, currentFile.name, needsConversion, ext]);
+
+  // Determine the PDF source URI for the viewer
+  const pdfSourceUri = isPdf
+    ? currentFile.uri
+    : convertedPdfPath
+      ? `file://${convertedPdfPath}`
+      : null;
+
+  // Whether we should show the PDF viewer
+  const showPdfViewer = isPdf || (needsConversion && convertedPdfPath && !conversionError);
 
   // Share handler
   const handleShare = async () => {
@@ -205,7 +255,28 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
 
       {/* Main Content Area */}
       <View style={styles.content}>
-        {isPdf && (
+        {/* Conversion loading state */}
+        {isConverting && (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color="#111827" />
+            <Text style={styles.loadingText}>
+              Converting {ext.toUpperCase()} to PDF…
+            </Text>
+            <Text style={styles.convertingSubtext}>
+              This may take a moment for large files
+            </Text>
+          </View>
+        )}
+
+        {/* Conversion error state */}
+        {conversionError && !isConverting && (
+          <View style={styles.centerContainer}>
+            <Text style={styles.errorText}>{conversionError}</Text>
+          </View>
+        )}
+
+        {/* PDF Viewer — for native PDFs and successfully converted documents */}
+        {showPdfViewer && !isConverting && pdfSourceUri && (
           <View style={styles.viewerContainer}>
             {pdfError ? (
               <View style={styles.centerContainer}>
@@ -215,7 +286,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
               <>
                 <Pdf
                   ref={pdfRef}
-                  source={{ uri: currentFile.uri, cache: true }}
+                  source={{ uri: pdfSourceUri, cache: true }}
                   style={styles.pdf}
                   fitPolicy={0}
                   spacing={12}
@@ -249,6 +320,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         )}
 
+        {/* Text file viewer */}
         {isText && (
           <TextDocumentViewer
             content={textContent}
@@ -257,7 +329,8 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
           />
         )}
 
-        {!isPdf && !isText && (
+        {/* Truly unsupported format (not PDF, not text, not convertible) */}
+        {!isPdf && !isText && !needsConversion && (
           <View style={styles.centerContainer}>
             <Text style={styles.placeholder}>
               Viewing {ext ? ext.toUpperCase() : 'this'} file format is not supported yet.
@@ -327,6 +400,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     fontWeight: '500',
+  },
+  convertingSubtext: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#9CA3AF',
   },
   placeholder: {
     fontSize: 15,

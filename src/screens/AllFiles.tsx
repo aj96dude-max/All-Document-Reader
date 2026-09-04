@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native'
 
 const AllFiles = () => {
   return (
-    <View>
+    <View style={styles.container}>
         <Text>All Files</Text>
     </View>
   )

@@ -1,4 +1,4 @@
-import { StyleSheet, View, Alert } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Tool from './tool';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -58,10 +58,6 @@ const ToolsContainer = () => {
       icon: require('../../../Assets/home/rtf.png'),
     },
   ];
-
-  const handleToolPress = (title: string) => {
-    console.log('Pressed:', title);
-  };
 
   return (
     <View style={styles.container}>

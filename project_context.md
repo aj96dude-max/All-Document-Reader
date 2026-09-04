@@ -122,13 +122,13 @@ AllDocumentReader/
 │       ├── MainActivity.kt       # Main activity
 │       └── MainApplication.kt    # Application class
 │
-├── W2P/                            # ★ Standalone Android module: OfflineDocConverter
+│   ├── W2P/                        # ★ Standalone Android module: OfflineDocConverter
 │   │                               #   Converts various document formats to PDF (offline, zero-dependency)
 │   │                               #   INTEGRATED into the React Native app via DocConverterModule
-│   ├── app/                       # Android app module (demo/test shell)
-│   ├── docx2pdf/                  # Core conversion library (included as Gradle dependency)
-│   ├── presentation/              # Presentation layer
-│   └── README.md                  # Detailed docs on supported formats
+│   │   ├── app/                       # Android app module (demo/test shell)
+│   │   ├── docx2pdf/                  # Core conversion library (included as Gradle dependency)
+│   │   ├── presentation/              # Presentation layer
+│   │   └── README.md                  # Detailed docs on supported formats
 │
 ├── ui/                             # UI design mockup screenshots (30 images)
 │                                   # Reference screens: Main Screen, Splash, Settings, Favorites,
@@ -296,9 +296,9 @@ All app data is persisted as **JSON files** in the app's `DocumentDir` (via `rea
 
 ## 10. W2P Module (Integrated)
 
-The `W2P/` directory contains **OfflineDocConverter** — a standalone Android/Kotlin library for converting documents to PDF offline. It is **integrated into the React Native app** as a local Gradle module dependency.
+The `android/W2P/` directory contains **OfflineDocConverter** — a standalone Android/Kotlin library for converting documents to PDF offline. It is **integrated into the React Native app** as a local Gradle module dependency.
 
-**Integration architecture:** `W2P/docx2pdf` → Gradle dependency → `DocConverterModule.kt` (native bridge) → `DocConverterService.ts` (JS service with caching) → `DocumentViewerScreen.tsx` (convert-then-view flow).
+**Integration architecture:** `android/W2P/docx2pdf` → Gradle dependency → `DocConverterModule.kt` (native bridge) → `DocConverterService.ts` (JS service with caching) → `DocumentViewerScreen.tsx` (convert-then-view flow).
 
 **Supported formats:** `.docx`, `.pptx`, `.xlsx`, `.epub`, `.rtf`, `.md`, `.txt`, `.tex`, `.csv`, `.tsv`, `.json`, `.xml`, images, source code files, and native PDF pass-through.
 

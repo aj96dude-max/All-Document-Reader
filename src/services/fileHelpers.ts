@@ -41,27 +41,38 @@ export const formatTime = (epochMs: number): string => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-export const getIconForExtension = (ext: string): ImageSourcePropType => {
+import PdfCircleIcon from '../../Assets/svgicons/pdf_circle.svg';
+import WordCircleIcon from '../../Assets/svgicons/word_circle.svg';
+import ExcelCircleIcon from '../../Assets/svgicons/xlsx_circle.svg';
+import PptCircleIcon from '../../Assets/svgicons/pptx_circle.svg';
+import TxtIcon from '../../Assets/svgicons/txtx.svg';
+import EpubIcon from '../../Assets/svgicons/epub.svg';
+import RtfIcon from '../../Assets/svgicons/rtf.svg';
+import AllFilesIcon from '../../Assets/svgicons/All.svg';
+import React from 'react';
+import { SvgProps } from 'react-native-svg';
+
+export const getIconForExtension = (ext: string): React.FC<SvgProps> => {
   switch ((ext || '').toLowerCase()) {
     case 'pdf':
-      return require('../../Assets/icons/pdf_circle.png');
+      return PdfCircleIcon;
     case 'doc':
     case 'docx':
-      return require('../../Assets/icons/word_circle.png');
+      return WordCircleIcon;
     case 'xls':
     case 'xlsx':
-      return require('../../Assets/icons/excel_circle.png');
+      return ExcelCircleIcon;
     case 'ppt':
     case 'pptx':
-      return require('../../Assets/icons/ppt_circle.png');
+      return PptCircleIcon;
     case 'txt':
-      return require('../../Assets/home/txt.png');
+      return TxtIcon;
     case 'epub':
-      return require('../../Assets/home/epub.png');
+      return EpubIcon;
     case 'rtf':
-      return require('../../Assets/home/rtf.png');
+      return RtfIcon;
     default:
-      return require('../../Assets/home/allfiles.png');
+      return AllFilesIcon;
   }
 };
 

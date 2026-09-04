@@ -1,5 +1,6 @@
 import { Image, TouchableOpacity, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ChevronBackwardIcon from '../../Assets/svgicons/chevron_backward.svg';
 
 type prop = {
   title: string;
@@ -42,9 +43,10 @@ const FileListHeader = ({ title, onBack }: prop) => {
         style={styles.backButton}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Image
-          source={require('../../Assets/icons/chevron_backward.png')}
-          style={styles.icon}
+        <ChevronBackwardIcon
+          width={24}
+          height={24}
+          style={styles.icon as any}
         />
       </TouchableOpacity>
       <Text style={styles.title}>{headerTitle}</Text>

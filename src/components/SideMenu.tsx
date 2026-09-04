@@ -18,6 +18,11 @@ import {
   rateApp,
 } from '../services/SettingsService';
 
+import AppIcon from '../../Assets/svgicons/App Icon.svg';
+import SecurityIcon from '../../Assets/svgicons/security.svg';
+import ShareIcon from '../../Assets/svgicons/share.svg';
+import FamilyStarIcon from '../../Assets/svgicons/family_star.svg';
+
 interface SideMenuProps {
   visible: boolean;
   onClose: () => void;
@@ -96,10 +101,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
         >
           {/* Header Illustration */}
           <View style={styles.headerSection}>
-            <Image
-              source={require('../../Assets/icons/app_icon.png')}
-              style={styles.appIcon}
-              resizeMode="contain"
+            <AppIcon
+              width={120}
+              height={120}
             />
             <Text style={styles.appTitle}>All Document Reader</Text>
           </View>
@@ -115,9 +119,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
               onPress={() => handleDismiss(openPrivacyPolicy)}
               activeOpacity={0.7}
             >
-              <Image
-                source={require('../../Assets/icons/security.png')}
-                style={styles.menuIcon}
+              <SecurityIcon
+                width={24}
+                height={24}
+                style={styles.menuIcon as any}
               />
               <Text style={styles.menuText}>Privacy Policy</Text>
             </TouchableOpacity>
@@ -128,9 +133,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
               onPress={() => handleDismiss(shareApp)}
               activeOpacity={0.7}
             >
-              <Image
-                source={require('../../Assets/icons/share.png')}
-                style={styles.menuIcon}
+              <ShareIcon
+                width={24}
+                height={24}
+                style={styles.menuIcon as any}
               />
               <Text style={styles.menuText}>Share with Friends</Text>
             </TouchableOpacity>
@@ -141,9 +147,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
               onPress={() => handleDismiss(rateApp)}
               activeOpacity={0.7}
             >
-              <Image
-                source={require('../../Assets/icons/family_star.png')}
-                style={styles.menuIcon}
+              <FamilyStarIcon
+                width={24}
+                height={24}
+                style={styles.menuIcon as any}
               />
               <Text style={styles.menuText}>Rate Us</Text>
             </TouchableOpacity>

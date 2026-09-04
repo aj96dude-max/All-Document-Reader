@@ -12,6 +12,8 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/types';
 
+import AppIcon from '../../Assets/svgicons/App Icon.svg';
+
 const { width } = Dimensions.get('window');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
@@ -120,10 +122,9 @@ const SplashScreen: React.FC<Props> = ({ navigation }) => {
             },
           ]}
         >
-          <Image
-            source={require('../../Assets/icons/app_icon.png')}
-            style={styles.appIcon}
-            resizeMode="contain"
+          <AppIcon
+            width={175}
+            height={175}
           />
         </Animated.View>
 

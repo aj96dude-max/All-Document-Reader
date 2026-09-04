@@ -11,6 +11,10 @@ import {
   Alert,
 } from 'react-native';
 
+import CancelIcon from '../../../Assets/svgicons/cancel.svg';
+import ArrowDropDownIcon from '../../../Assets/svgicons/arrow_drop_down.svg';
+import ArrowDropDownUpIcon from '../../../Assets/svgicons/arrow_drop_down (1).svg';
+
 interface JumpToPageModalProps {
   visible: boolean;
   currentPage: number;
@@ -84,9 +88,10 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   activeOpacity={0.7}
                   style={styles.closeBtn}
                 >
-                  <Image
-                    source={require('../../../Assets/icons/cancel.png')}
-                    style={styles.closeIcon}
+                  <CancelIcon
+                    width={24}
+                    height={24}
+                    style={styles.closeIcon as any}
                   />
                 </TouchableOpacity>
               </View>
@@ -98,9 +103,10 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   style={styles.stepArrowBtn}
                   activeOpacity={0.6}
                 >
-                  <Image
-                    source={require('../../../Assets/icons/arrow_drop_down.png')}
-                    style={styles.stepArrowIcon}
+                  <ArrowDropDownIcon
+                    width={14}
+                    height={14}
+                    style={styles.stepArrowIcon as any}
                   />
                 </TouchableOpacity>
 
@@ -118,9 +124,10 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   style={styles.stepArrowBtn}
                   activeOpacity={0.6}
                 >
-                  <Image
-                    source={require('../../../Assets/icons/arrow_drop_down (1).png')}
-                    style={styles.stepArrowIcon}
+                  <ArrowDropDownUpIcon
+                    width={14}
+                    height={14}
+                    style={styles.stepArrowIcon as any}
                   />
                 </TouchableOpacity>
               </View>

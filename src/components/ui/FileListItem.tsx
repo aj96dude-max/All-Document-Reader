@@ -13,7 +13,7 @@ export type FileListItemProps = {
   size: string;
   date: string;
   time?: string;
-  icon: ImageSourcePropType;
+  icon: React.FC<import('react-native-svg').SvgProps>;
   iconBgColor?: string;
   onPress: () => void;
   onMorePress?: (position: { pageX: number; pageY: number }) => void;
@@ -24,7 +24,7 @@ const FileListItem: React.FC<FileListItemProps> = ({
   size,
   date,
   time,
-  icon,
+  icon: Icon,
   iconBgColor,
   onPress,
   onMorePress,
@@ -38,7 +38,7 @@ const FileListItem: React.FC<FileListItemProps> = ({
       onPress={onPress}
     >
       <View style={[styles.iconContainer, iconBgColor ? { backgroundColor: iconBgColor } : null]}>
-        <Image source={icon} style={styles.icon} />
+        <Icon width="100%" height="100%" style={styles.icon as any} />
       </View>
 
       <View style={styles.details}>

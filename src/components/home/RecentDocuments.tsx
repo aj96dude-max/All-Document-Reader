@@ -34,6 +34,9 @@ import {
   getIconForExtension,
 } from '../../services/fileHelpers';
 
+import SearchIcon from '../../../Assets/svgicons/search.svg';
+import CloseIcon from '../../../Assets/svgicons/close.svg';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const RecentDocuments = () => {
@@ -168,9 +171,10 @@ const RecentDocuments = () => {
       {/* Header / Search Bar */}
       {isSearchActive ? (
         <View style={styles.searchBarContainer}>
-          <Image
-            source={require('../../../Assets/icons/search.png')}
-            style={styles.searchBarIcon}
+          <SearchIcon
+            width={20}
+            height={20}
+            style={styles.searchBarIcon as any}
           />
           <TextInput
             style={styles.searchInput}
@@ -189,9 +193,10 @@ const RecentDocuments = () => {
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             style={styles.clearButton}
           >
-            <Image
-              source={require('../../../Assets/icons/close.png')}
-              style={styles.closeIcon}
+            <CloseIcon
+              width={18}
+              height={18}
+              style={styles.closeIcon as any}
             />
           </TouchableOpacity>
         </View>
@@ -205,9 +210,10 @@ const RecentDocuments = () => {
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               activeOpacity={0.7}
             >
-              <Image
-                style={styles.searchIcon}
-                source={require('../../../Assets/icons/search.png')}
+              <SearchIcon
+                width={24}
+                height={24}
+                style={styles.searchIcon as any}
               />
             </TouchableOpacity>
           )}

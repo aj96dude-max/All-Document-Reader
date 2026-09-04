@@ -16,6 +16,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import CustomHeader from './components/CustomHeader';
 import { initSettings } from './services/SettingsService';
 
+import HomeIcon from '../Assets/svgicons/home.svg';
+import HomeActiveIcon from '../Assets/svgicons/home_active.svg';
+import FavoriteIcon from '../Assets/svgicons/favorite.svg';
+import FavoriteActiveIcon from '../Assets/svgicons/favorite_active.svg';
+import SettingsIcon from '../Assets/svgicons/settings.svg';
+import SettingsActiveIcon from '../Assets/svgicons/settings_active.svg';
+
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -41,15 +48,12 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
               onMenuPress={onOpenSideMenu}
             />
           ),
-          tabBarIcon: ({ size, focused }) => (
-            <Image
-              source={
-                focused
-                  ? require('../Assets/tabs/home-active.png')
-                  : require('../Assets/tabs/home.png')
-              }
-              style={{ width: size, height: size }}
-            />
+          tabBarIcon: ({ size, focused, color }) => (
+            focused ? (
+              <HomeActiveIcon width={size} height={size} color={color} />
+            ) : (
+              <HomeIcon width={size} height={size} color={color} />
+            )
           ),
         }}
       />
@@ -63,15 +67,12 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
               onMenuPress={onOpenSideMenu}
             />
           ),
-          tabBarIcon: ({ size, focused }) => (
-            <Image
-              source={
-                focused
-                  ? require('../Assets/tabs/favorite-active.png')
-                  : require('../Assets/tabs/favorite.png')
-              }
-              style={{ width: size, height: size }}
-            />
+          tabBarIcon: ({ size, focused, color }) => (
+            focused ? (
+              <FavoriteActiveIcon width={size} height={size} color={color} />
+            ) : (
+              <FavoriteIcon width={size} height={size} color={color} />
+            )
           ),
         }}
       />
@@ -85,15 +86,12 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
               onMenuPress={onOpenSideMenu}
             />
           ),
-          tabBarIcon: ({ size, focused }) => (
-            <Image
-              source={
-                focused
-                  ? require('../Assets/tabs/settings-active.png')
-                  : require('../Assets/tabs/settings.png')
-              }
-              style={{ width: size, height: size }}
-            />
+          tabBarIcon: ({ size, focused, color }) => (
+            focused ? (
+              <SettingsActiveIcon width={size} height={size} color={color} />
+            ) : (
+              <SettingsIcon width={size} height={size} color={color} />
+            )
           ),
         }}
       />

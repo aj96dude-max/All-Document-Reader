@@ -12,10 +12,12 @@ import {
   ImageStyle,
 } from 'react-native';
 
+import ChevronBackwardIcon from '../../../Assets/svgicons/chevron_backward.svg';
+
 export type SettingItemType = 'link' | 'switch';
 
 export interface SettingItemProps {
-  icon: ImageSourcePropType;
+  icon: React.FC<import('react-native-svg').SvgProps>;
   title: string;
   type?: SettingItemType;
   value?: boolean;
@@ -27,7 +29,7 @@ export interface SettingItemProps {
 }
 
 const SettingItem: React.FC<SettingItemProps> = ({
-  icon,
+  icon: Icon,
   title,
   type = 'link',
   value = false,
@@ -43,7 +45,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
     <View style={[styles.card, style]} testID={testID}>
       {/* Left Icon */}
       <View style={styles.iconContainer}>
-        <Image source={icon} style={[styles.leftIcon, iconStyle]} resizeMode="contain" />
+        <Icon width="100%" height="100%" style={styles.leftIcon as any} {...(StyleSheet.flatten(iconStyle) as any)} />
       </View>
 
       {/* Title */}
@@ -63,10 +65,10 @@ const SettingItem: React.FC<SettingItemProps> = ({
         />
       ) : (
         <View style={styles.chevronContainer}>
-          <Image
-            source={require('../../../Assets/icons/chevron_backward.png')}
-            style={styles.chevronIcon}
-            resizeMode="contain"
+          <ChevronBackwardIcon
+            width={14}
+            height={14}
+            style={styles.chevronIcon as any}
           />
         </View>
       )}

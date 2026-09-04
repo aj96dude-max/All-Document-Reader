@@ -1,12 +1,15 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
+import EmptyFolderIcon from '../../../Assets/svgicons/Empty Folder.svg';
+
 const EmptyDocState = () => {
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../../Assets/home/Empty Folder.png')}
-        style={styles.emptyImage}
+      <EmptyFolderIcon
+        width={100}
+        height={100}
+        style={styles.emptyImage as any}
       />
       <Text style={styles.emptyTitle}>No Recent Documents</Text>
       <Text style={styles.emptySubtitle}>

@@ -34,6 +34,8 @@ import {
   getIconForExtension,
 } from '../services/fileHelpers';
 
+import EmptyFolderIcon from '../../Assets/svgicons/Empty Folder.svg';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const FavoriteScreen = () => {
@@ -176,9 +178,10 @@ const FavoriteScreen = () => {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Image
-          source={require('../../Assets/home/Empty Folder.png')}
-          style={styles.emptyImage}
+        <EmptyFolderIcon
+          width={120}
+          height={120}
+          style={styles.emptyImage as any}
         />
         <Text style={styles.emptyTitle}>No Favorites Yet!</Text>
         <Text style={styles.emptySubtitle}>

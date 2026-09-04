@@ -30,6 +30,9 @@ import {
   getIconForExtension,
 } from '../services/fileHelpers';
 
+import EmptyFolderIcon from '../../Assets/svgicons/Empty Folder.svg';
+import ChevronBackwardIcon from '../../Assets/svgicons/chevron_backward.svg';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const TrashScreen = () => {
@@ -129,9 +132,10 @@ const TrashScreen = () => {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Image
-          source={require('../../Assets/home/Empty Folder.png')}
-          style={styles.emptyImage}
+        <EmptyFolderIcon
+          width={120}
+          height={120}
+          style={styles.emptyImage as any}
         />
         <Text style={styles.emptyTitle}>Trash is Empty</Text>
         <Text style={styles.emptySubtitle}>
@@ -153,9 +157,10 @@ const TrashScreen = () => {
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           activeOpacity={0.7}
         >
-          <Image
-            source={require('../../Assets/icons/chevron_backward.png')}
-            style={styles.backIcon}
+          <ChevronBackwardIcon
+            width={22}
+            height={22}
+            style={styles.backIcon as any}
           />
         </TouchableOpacity>
 

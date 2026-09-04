@@ -34,6 +34,8 @@ import {
   getIconForExtension,
 } from '../services/fileHelpers';
 
+import EmptyFolderIcon from '../../Assets/svgicons/Empty Folder.svg';
+
 type Props = NativeStackScreenProps<RootStackParamList, 'FileList'>;
 
 const FileListScreen = ({ route, navigation }: Props) => {
@@ -175,9 +177,10 @@ const FileListScreen = ({ route, navigation }: Props) => {
 
   const renderEmpty = () => (
     <View style={styles.center}>
-      <Image
-        source={require('../../Assets/home/Empty Folder.png')}
-        style={styles.emptyImage}
+      <EmptyFolderIcon
+        width={120}
+        height={120}
+        style={styles.emptyImage as any}
       />
       <Text style={styles.emptyText}>No Documents Yet!</Text>
     </View>

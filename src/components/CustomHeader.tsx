@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ClearAllIcon from '../../Assets/svgicons/clear_all.svg';
 
 type Props = {
   title: string;
@@ -17,9 +18,10 @@ const CustomHeader = ({ title, onMenuPress }: Props) => {
         activeOpacity={0.7}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       >
-        <Image
-          source={require('../../Assets/clear_all.png')}
-          style={styles.icon}
+        <ClearAllIcon
+          width={24}
+          height={24}
+          style={styles.icon as any}
         />
       </TouchableOpacity>
 

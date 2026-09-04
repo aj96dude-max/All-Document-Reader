@@ -17,6 +17,12 @@ import {
   rateApp,
 } from '../services/SettingsService';
 
+import WbIncandescentIcon from '../../Assets/svgicons/wb_incandescent.svg';
+import DeleteForeverIcon from '../../Assets/svgicons/delete_forever.svg';
+import SecurityIcon from '../../Assets/svgicons/security.svg';
+import ShareIcon from '../../Assets/svgicons/share.svg';
+import FamilyStarIcon from '../../Assets/svgicons/family_star.svg';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const SettingScreen = () => {
@@ -65,7 +71,7 @@ const SettingScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <SettingItem
-          icon={require('../../Assets/icons/wb_incandescent.png')}
+          icon={WbIncandescentIcon}
           title="Keep Screen On"
           type="switch"
           value={keepScreenOn}
@@ -73,28 +79,28 @@ const SettingScreen = () => {
         />
 
         <SettingItem
-          icon={require('../../Assets/icons/delete_forever.png')}
+          icon={DeleteForeverIcon}
           title="Trash"
           type="link"
           onPress={handleTrashPress}
         />
 
         <SettingItem
-          icon={require('../../Assets/icons/security.png')}
+          icon={SecurityIcon}
           title="Privacy Policy"
           type="link"
           onPress={openPrivacyPolicy}
         />
 
         <SettingItem
-          icon={require('../../Assets/icons/share.png')}
+          icon={ShareIcon}
           title="Share with Friends"
           type="link"
           onPress={shareApp}
         />
 
         <SettingItem
-          icon={require('../../Assets/icons/family_star.png')}
+          icon={FamilyStarIcon}
           title="Rate Us"
           type="link"
           onPress={rateApp}

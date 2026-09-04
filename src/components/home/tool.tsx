@@ -2,15 +2,15 @@ import { Image, TouchableOpacity, StyleSheet, Text, View } from "react-native";
 
 type ToolProps = {
   title: string;
-  icon: any;
+  icon: React.FC<import('react-native-svg').SvgProps>;
   onPress: () => void;
 };
 
-const Tool = ({ title, icon, onPress }: ToolProps) => {
+const Tool = ({ title, icon: Icon, onPress }: ToolProps) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.iconPlaceHolder}>
-        <Image source={icon} style={styles.image} />
+        <Icon width="100%" height="100%" />
       </View>
 
       <Text style={styles.title}>{title}</Text>

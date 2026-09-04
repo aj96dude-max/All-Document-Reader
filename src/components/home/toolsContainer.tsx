@@ -4,6 +4,15 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/types';
 
+import AllFilesIcon from '../../../Assets/svgicons/All.svg';
+import PdfIcon from '../../../Assets/svgicons/pdf.svg';
+import WordIcon from '../../../Assets/svgicons/docx.svg';
+import ExcelIcon from '../../../Assets/svgicons/xlsx.svg';
+import PptIcon from '../../../Assets/svgicons/pptx.svg';
+import TxtIcon from '../../../Assets/svgicons/txtx.svg';
+import EpubIcon from '../../../Assets/svgicons/epub.svg';
+import RtfIcon from '../../../Assets/svgicons/rtf.svg';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ToolsContainer = () => {
@@ -13,49 +22,49 @@ const ToolsContainer = () => {
       id: 1,
       title: 'All Files',
       type: 'all',
-      icon: require('../../../Assets/home/allfiles.png'),
+      icon: AllFilesIcon,
     },
     {
       id: 2,
       title: 'PDF',
       type: 'pdf',
-      icon: require('../../../Assets/home/pdf.png'),
+      icon: PdfIcon,
     },
     {
       id: 3,
       title: 'Word',
       type: 'word',
-      icon: require('../../../Assets/home/word.png'),
+      icon: WordIcon,
     },
     {
       id: 4,
       title: 'Excel',
       type: 'excel',
-      icon: require('../../../Assets/home/excel.png'),
+      icon: ExcelIcon,
     },
     {
       id: 5,
       title: 'PPT',
       type: 'ppt',
-      icon: require('../../../Assets/home/ppt.png'),
+      icon: PptIcon,
     },
     {
       id: 6,
       title: 'TXT',
       type: 'txt',
-      icon: require('../../../Assets/home/txt.png'),
+      icon: TxtIcon,
     },
     {
       id: 7,
       title: 'EPUB',
       type: 'epub',
-      icon: require('../../../Assets/home/epub.png'),
+      icon: EpubIcon,
     },
     {
       id: 8,
       title: 'RTF',
       type: 'rtf',
-      icon: require('../../../Assets/home/rtf.png'),
+      icon: RtfIcon,
     },
   ];
 

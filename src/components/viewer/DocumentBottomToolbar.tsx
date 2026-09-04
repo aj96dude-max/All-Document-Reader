@@ -1,6 +1,12 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
+import BorderColorIcon from '../../../Assets/svgicons/border_color.svg';
+import HeartMinusIcon from '../../../Assets/svgicons/heart_minus.svg';
+import FavoriteIcon from '../../../Assets/svgicons/favorite.svg';
+import DeleteForeverIcon from '../../../Assets/svgicons/delete_forever.svg';
+import SearchIcon from '../../../Assets/svgicons/search.svg';
+
 interface DocumentBottomToolbarProps {
   isFavorite: boolean;
   bottomInset: number;
@@ -30,9 +36,10 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
         onPress={onRename}
         activeOpacity={0.7}
       >
-        <Image
-          source={require('../../../Assets/icons/border_color.png')}
-          style={styles.toolbarIcon}
+        <BorderColorIcon
+          width={22}
+          height={22}
+          style={styles.toolbarIcon as any}
         />
         <Text style={styles.toolbarLabel}>Rename</Text>
       </TouchableOpacity>
@@ -42,17 +49,19 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
         onPress={onToggleFavorite}
         activeOpacity={0.7}
       >
-        <Image
-          source={
-            isFavorite
-              ? require('../../../Assets/icons/heart_minus.png')
-              : require('../../../Assets/icons/favorite.png')
-          }
-          style={[
-            styles.toolbarIcon,
-            isFavorite && styles.favoriteActiveIcon,
-          ]}
-        />
+        {isFavorite ? (
+          <HeartMinusIcon
+            width={22}
+            height={22}
+            style={[styles.toolbarIcon as any, styles.favoriteActiveIcon as any]}
+          />
+        ) : (
+          <FavoriteIcon
+            width={22}
+            height={22}
+            style={[styles.toolbarIcon as any]}
+          />
+        )}
         <Text
           style={[
             styles.toolbarLabel,
@@ -68,9 +77,10 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
         onPress={onDelete}
         activeOpacity={0.7}
       >
-        <Image
-          source={require('../../../Assets/icons/delete_forever.png')}
-          style={styles.toolbarIcon}
+        <DeleteForeverIcon
+          width={22}
+          height={22}
+          style={styles.toolbarIcon as any}
         />
         <Text style={styles.toolbarLabel}>Delete</Text>
       </TouchableOpacity>
@@ -80,9 +90,10 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
         onPress={onJumpToPage}
         activeOpacity={0.7}
       >
-        <Image
-          source={require('../../../Assets/icons/search.png')}
-          style={styles.toolbarIcon}
+        <SearchIcon
+          width={22}
+          height={22}
+          style={styles.toolbarIcon as any}
         />
         <Text style={styles.toolbarLabel}>Jump to</Text>
       </TouchableOpacity>

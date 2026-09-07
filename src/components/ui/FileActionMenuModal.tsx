@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 
 
-import HeartMinusIcon from '../../../Assets/svgicons/heart_minus.svg';
-import FavoriteIcon from '../../../Assets/svgicons/black_favorite.svg';
+import HeartMinusIcon from '../../../Assets/svgicons/favorite_active.svg';
+import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
 import BorderColorIcon from '../../../Assets/svgicons/border_color.svg';
 import DeleteForeverIcon from '../../../Assets/svgicons/delete_forever.svg';
 import ShareIcon from '../../../Assets/svgicons/share.svg';

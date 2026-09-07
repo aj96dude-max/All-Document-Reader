@@ -2,10 +2,10 @@ import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
 import BorderColorIcon from '../../../Assets/svgicons/border_color.svg';
-import HeartMinusIcon from '../../../Assets/svgicons/heart_minus.svg';
-import FavoriteIcon from '../../../Assets/svgicons/favorite.svg';
+import HeartMinusIcon from '../../../Assets/svgicons/favorite_active.svg';
+import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
 import DeleteForeverIcon from '../../../Assets/svgicons/delete_forever.svg';
-import SearchIcon from '../../../Assets/svgicons/search.svg';
+import SearchIcon from '../../../Assets/svgicons/search_shade.svg';
 
 interface DocumentBottomToolbarProps {
   isFavorite: boolean;

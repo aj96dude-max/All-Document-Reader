@@ -7,6 +7,8 @@ import {
   StyleSheet,
   ImageSourcePropType,
 } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 export type FileListItemProps = {
   name: string;
@@ -29,6 +31,9 @@ const FileListItem: React.FC<FileListItemProps> = ({
   onPress,
   onMorePress,
 }) => {
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, mode), [colors, mode]);
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -66,10 +71,10 @@ const FileListItem: React.FC<FileListItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   container: {
     height: 72,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -80,10 +85,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
+    borderWidth: mode === 'dark' ? 1 : 0,
+    borderColor: colors.border,
   },
   containerPressed: {
     opacity: 0.9,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: mode === 'dark' ? '#2C2C2E' : '#FAFAFA',
   },
   iconContainer: {
     width: 48,
@@ -108,12 +115,12 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.text,
   },
   info: {
     marginTop: 4,
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.textSecondary,
   },
   moreButton: {
     width: 36,
@@ -123,7 +130,7 @@ const styles = StyleSheet.create({
   },
   more: {
     fontSize: 22,
-    color: '#9CA3AF',
+    color: colors.iconInactive,
     fontWeight: '700',
     lineHeight: 24,
   },

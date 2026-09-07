@@ -14,10 +14,14 @@ import {
   checkStoragePermission,
   requestStoragePermission,
 } from '../services/FileScanner';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorPalette } from '../theme/colors';
 
 const HomeScreen = () => {
   const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   // Check permission once when the user opens the app / HomeScreen mounts
   useEffect(() => {
@@ -85,7 +89,7 @@ const HomeScreen = () => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <StatusBar barStyle="dark-content" />
+        <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background as any} />
         <ToolsContainer onRequirePermission={requirePermission} />
         <RecentDocuments onRequirePermission={requirePermission} />
       </ScrollView>
@@ -100,14 +104,14 @@ const HomeScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F5F6F8',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#F5F6F8',
+    backgroundColor: colors.background,
   },
   contentContainer: {
     paddingBottom: 24,

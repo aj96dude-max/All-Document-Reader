@@ -5,12 +5,16 @@ const { FileScannerModule } = NativeModules;
 
 const SETTINGS_FILE_PATH = `${ReactNativeBlobUtil.fs.dirs.DocumentDir}/app_settings.json`;
 
+import { ThemeMode } from '../theme/ThemeContext';
+
 export interface AppSettings {
   keepScreenOn: boolean;
+  theme: ThemeMode;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   keepScreenOn: true,
+  theme: 'system',
 };
 
 /**

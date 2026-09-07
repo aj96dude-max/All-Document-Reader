@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface RenameModalProps {
   visible: boolean;
@@ -27,6 +29,8 @@ const RenameModal: React.FC<RenameModalProps> = ({
   onSave,
 }) => {
   const [nameInput, setNameInput] = useState<string>(initialName);
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   useEffect(() => {
     if (visible) {
@@ -93,10 +97,10 @@ const RenameModal: React.FC<RenameModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
   },
   modalOverlayContent: {
@@ -107,7 +111,7 @@ const styles = StyleSheet.create({
   },
   renameDialog: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 20,
     padding: 24,
     shadowColor: '#000',
@@ -119,19 +123,19 @@ const styles = StyleSheet.create({
   renameDialogTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
   renameTextInput: {
     height: 48,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 15,
-    color: '#111827',
-    backgroundColor: '#F9FAFB',
+    color: colors.text,
+    backgroundColor: colors.background,
     marginBottom: 20,
   },
   dialogActionsRow: {
@@ -147,10 +151,10 @@ const styles = StyleSheet.create({
   dialogCancelText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   dialogSaveBtn: {
-    backgroundColor: '#111827',
+    backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,

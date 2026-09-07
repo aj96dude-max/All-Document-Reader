@@ -1,4 +1,7 @@
+import React from "react";
 import { TouchableOpacity, StyleSheet, Text, View } from "react-native";
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 type ToolProps = {
   title: string;
@@ -7,6 +10,8 @@ type ToolProps = {
 };
 
 const Tool = ({ title, icon: Icon, onPress }: ToolProps) => {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   return (
     <TouchableOpacity
       style={styles.container}
@@ -24,7 +29,7 @@ const Tool = ({ title, icon: Icon, onPress }: ToolProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     width: '100%',
     height: 98,
@@ -43,6 +48,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     textAlign: 'center',
+    color: colors.text,
   },
 });
 

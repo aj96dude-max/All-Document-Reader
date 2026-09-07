@@ -22,6 +22,8 @@ import AppIcon from '../../Assets/svgicons/App Icon.svg';
 import SecurityIcon from '../../Assets/svgicons/security.svg';
 import ShareIcon from '../../Assets/svgicons/share.svg';
 import FamilyStarIcon from '../../Assets/svgicons/family_star.svg';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorPalette } from '../theme/colors';
 
 interface SideMenuProps {
   visible: boolean;
@@ -34,6 +36,8 @@ const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.76, 320);
 const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
   const insets = useSafeAreaInsets();
   const animValue = useRef(new Animated.Value(0)).current;
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, mode), [colors, mode]);
 
   useEffect(() => {
     if (visible) {
@@ -161,7 +165,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   overlayContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -176,7 +180,7 @@ const styles = StyleSheet.create({
   },
   drawer: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
     shadowColor: '#000',
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.25,
@@ -196,13 +200,13 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text,
     textAlign: 'center',
     marginTop: 14,
   },
   divider: {
     height: 1.5,
-    backgroundColor: '#111827',
+    backgroundColor: mode === 'dark' ? colors.border : '#111827',
     width: '100%',
   },
   menuList: {
@@ -218,13 +222,13 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
-    tintColor: '#1F2937',
+    tintColor: colors.icon,
     marginRight: 18,
   },
   menuText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text,
   },
 });
 

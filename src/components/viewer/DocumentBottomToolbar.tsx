@@ -7,6 +7,8 @@ import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
 import DeleteForeverIcon from '../../../Assets/svgicons/delete_forever.svg';
 import SearchIcon from '../../../Assets/svgicons/search_bold.svg';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface DocumentBottomToolbarProps {
   isFavorite: boolean;
@@ -26,6 +28,8 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
   onJumpToPage,
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   return (
     <>
@@ -114,12 +118,12 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   bottomToolbar: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: colors.border,
     paddingTop: 10,
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -134,19 +138,19 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     resizeMode: 'contain',
-    tintColor: '#1F2937',
+    tintColor: colors.icon,
     marginBottom: 4,
   },
   favoriteActiveIcon: {
-    tintColor: '#ED1C24',
+    tintColor: colors.primary,
   },
   toolbarLabel: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#1F2937',
+    color: colors.text,
   },
   favoriteActiveLabel: {
-    color: '#ED1C24',
+    color: colors.primary,
     fontWeight: '600',
   },
 });

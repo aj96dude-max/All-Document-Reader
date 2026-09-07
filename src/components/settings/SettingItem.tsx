@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 
 import ChevronBackwardIcon from '../../../Assets/svgicons/chevron_backward.svg';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 export type SettingItemType = 'link' | 'switch';
 
@@ -39,13 +41,16 @@ const SettingItem: React.FC<SettingItemProps> = ({
   iconStyle,
   testID,
 }) => {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+
   const isSwitch = type === 'switch';
 
   const content = (
     <View style={[styles.card, style]} testID={testID}>
       {/* Left Icon */}
       <View style={styles.iconContainer}>
-        <Icon width="100%" height="100%" style={styles.leftIcon as any} {...(StyleSheet.flatten(iconStyle) as any)} />
+        <Icon width="100%" height="100%" style={styles.leftIcon as any} {...(StyleSheet.flatten(iconStyle) as any)} color={colors.icon} />
       </View>
 
       {/* Title */}
@@ -58,9 +63,9 @@ const SettingItem: React.FC<SettingItemProps> = ({
         <Switch
           value={value}
           onValueChange={onValueChange}
-          trackColor={{ false: '#E5E7EB', true: '#ED1C24' }}
+          trackColor={{ false: colors.border, true: colors.primary }}
           thumbColor="#FFFFFF"
-          ios_backgroundColor="#E5E7EB"
+          ios_backgroundColor={colors.border}
           style={styles.switch}
         />
       ) : (
@@ -69,6 +74,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
             width={14}
             height={14}
             style={styles.chevronIcon as any}
+            color={colors.icon}
           />
         </View>
       )}
@@ -102,12 +108,11 @@ const SettingItem: React.FC<SettingItemProps> = ({
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 32,
     minHeight: 64,
     paddingVertical: 14,
@@ -128,13 +133,13 @@ const styles = StyleSheet.create({
   leftIcon: {
     width: 24,
     height: 24,
-    tintColor: '#1F2937',
+    tintColor: colors.icon,
   },
   title: {
     flex: 1,
     fontSize: 16,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text,
     marginLeft: 18,
   },
   switch: {
@@ -149,7 +154,7 @@ const styles = StyleSheet.create({
   chevronIcon: {
     width: 14,
     height: 14,
-    tintColor: '#1F2937',
+    tintColor: colors.icon,
     transform: [{ rotate: '180deg' }],
   },
 });

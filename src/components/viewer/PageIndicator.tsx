@@ -1,5 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface PageIndicatorProps {
   currentPage: number;
@@ -7,6 +9,8 @@ interface PageIndicatorProps {
 }
 
 const PageIndicator: React.FC<PageIndicatorProps> = ({ currentPage, totalPages }) => {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   return (
     <View style={styles.pageIndicatorContainer}>
       <Text style={styles.pageIndicatorText}>
@@ -16,7 +20,7 @@ const PageIndicator: React.FC<PageIndicatorProps> = ({ currentPage, totalPages }
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   pageIndicatorContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -26,7 +30,7 @@ const styles = StyleSheet.create({
   pageIndicatorText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
   },
 });
 

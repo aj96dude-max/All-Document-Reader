@@ -34,6 +34,8 @@ import {
   formatTime,
   getIconForExtension,
 } from '../services/fileHelpers';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorPalette } from '../theme/colors';
 
 import LottieView from 'lottie-react-native';
 
@@ -44,6 +46,9 @@ const FileListScreen = ({ route, navigation }: Props) => {
   const [files, setFiles] = useState<ScannedFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   // 3-dots Menu & Rename state
   const [selectedFileForMenu, setSelectedFileForMenu] = useState<ScannedFile | null>(null);
@@ -190,7 +195,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background as any} />
       <FileListHeader title={fileType} onBack={() => navigation.goBack()} />
       {loading ? (
         <Loading message="Scanning device…" />
@@ -238,10 +243,10 @@ const FileListScreen = ({ route, navigation }: Props) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
@@ -266,11 +271,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
+    color: colors.textSecondary,
   },
   errorText: {
     fontSize: 14,
-    color: '#ED1C24',
+    color: colors.primary,
     textAlign: 'center',
   },
 });

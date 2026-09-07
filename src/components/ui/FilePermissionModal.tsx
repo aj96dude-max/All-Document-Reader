@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 
 import FolderIcon from '../../../Assets/svgicons/folder.svg';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface FilePermissionModalProps {
   visible: boolean;
@@ -28,6 +30,9 @@ const FilePermissionModal: React.FC<FilePermissionModalProps> = ({
   title = 'Documents',
   description = 'Allow Document Reader to access all your Documents on this Device ?',
 }) => {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+
   return (
     <Modal
       visible={visible}
@@ -79,17 +84,17 @@ const FilePermissionModal: React.FC<FilePermissionModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },
   dialogCard: {
     width: Math.min(SCREEN_WIDTH - 48, 330),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 24,
     paddingHorizontal: 24,
     paddingTop: 32,
@@ -111,14 +116,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1E2238',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 12,
   },
   description: {
     fontSize: 15,
     fontWeight: '400',
-    color: '#4B5563',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 8,
@@ -131,11 +136,11 @@ const styles = StyleSheet.create({
   allowButton: {
     width: '100%',
     height: 52,
-    backgroundColor: '#ED1C24',
+    backgroundColor: colors.primary,
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#ED1C24',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -149,15 +154,15 @@ const styles = StyleSheet.create({
   skipButton: {
     width: '100%',
     height: 52,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     borderRadius: 26,
     borderWidth: 1.5,
-    borderColor: '#ED1C24',
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   skipButtonText: {
-    color: '#ED1C24',
+    color: colors.primary,
     fontSize: 15,
     fontWeight: '600',
   },

@@ -34,6 +34,8 @@ import JumpToPageModal from '../components/viewer/JumpToPageModal';
 import RenameModal from '../components/viewer/RenameModal';
 import PageIndicator from '../components/viewer/PageIndicator';
 import TextDocumentViewer from '../components/viewer/TextDocumentViewer';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorPalette } from '../theme/colors';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FileViewer'>;
 
@@ -42,6 +44,9 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const { file } = route.params;
 
   const pdfRef = useRef<any>(null);
+
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   // File states
   const [currentFile, setCurrentFile] = useState<ScannedFile>(file);
@@ -244,7 +249,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       {/* Top Header Component */}
       <DocumentHeader
@@ -371,14 +376,14 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F5F7',
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
-    backgroundColor: '#F4F5F7',
+    backgroundColor: colors.background,
   },
   viewerContainer: {
     flex: 1,
@@ -387,7 +392,7 @@ const styles = StyleSheet.create({
   pdf: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#F4F5F7',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
@@ -398,22 +403,22 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   convertingSubtext: {
     marginTop: 6,
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.textSecondary,
   },
   placeholder: {
     fontSize: 15,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   errorText: {
     fontSize: 14,
-    color: '#EF4444',
+    color: colors.primary,
     textAlign: 'center',
   },
 });

@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 
 import DeleteFileIcon from '../../../Assets/svgicons/delete_file.svg';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface DeleteConfirmationModalProps {
   visible: boolean;
@@ -23,6 +25,8 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   onClose,
   onConfirm,
 }) => {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -115,16 +119,16 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 24,
     paddingVertical: 32,
     paddingHorizontal: 24,
@@ -143,22 +147,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#1C1C1C',
+    color: colors.text,
     marginBottom: 12,
   },
   description: {
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
   },
   boldRedText: {
-    color: '#ED1C24',
+    color: colors.primary,
     fontWeight: '700',
   },
   allowButton: {
-    backgroundColor: '#ED1C24',
+    backgroundColor: colors.primary,
     borderRadius: 30,
     paddingVertical: 14,
     width: '100%',
@@ -171,16 +175,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   skipButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     borderRadius: 30,
     paddingVertical: 14,
     width: '100%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ED1C24',
+    borderColor: colors.primary,
   },
   skipButtonText: {
-    color: '#ED1C24',
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
   },

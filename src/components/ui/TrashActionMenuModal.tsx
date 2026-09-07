@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import Back from "../../../Assets/svgicons/chevron_backward.svg"
 import Delte from "../../../Assets/svgicons/delete_forever.svg"
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface TrashActionMenuModalProps {
   visible: boolean;
@@ -32,6 +34,8 @@ const TrashActionMenuModal: React.FC<TrashActionMenuModalProps> = ({
   onRestore,
   onDeletePermanently,
 }) => {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const anim = useRef(new Animated.Value(0)).current;
   const { height: windowHeight } = Dimensions.get('window');
 
@@ -119,6 +123,7 @@ const TrashActionMenuModal: React.FC<TrashActionMenuModalProps> = ({
                 <Back 
                 width={24}
                 height={24}
+                style={[styles.menuIcon as any, { tintColor: colors.primary }]}
                 />
                 <Text style={styles.menuText}>Restore</Text>
               </TouchableOpacity>
@@ -129,7 +134,7 @@ const TrashActionMenuModal: React.FC<TrashActionMenuModalProps> = ({
                 onPress={() => handleDismiss(onDeletePermanently)}
                 activeOpacity={0.7}
               >
-                <Delte width={24} height={24} />
+                <Delte width={24} height={24} style={[styles.menuIcon as any, { tintColor: colors.primary }]} />
                 <Text style={styles.menuText}>Delete</Text>
               </TouchableOpacity>
             </Animated.View>
@@ -140,13 +145,13 @@ const TrashActionMenuModal: React.FC<TrashActionMenuModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: colors.overlay,
   },
   menuCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 22,
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -166,7 +171,6 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     resizeMode: 'contain',
-    tintColor: '#ED1C24',
     marginRight: 14,
   },
   restoreIcon: {
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#ED1C24',
+    color: colors.primary,
   },
 });
 

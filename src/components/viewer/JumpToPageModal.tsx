@@ -14,6 +14,8 @@ import {
 import CancelIcon from '../../../Assets/svgicons/cancel.svg';
 import ArrowDropDownIcon from '../../../Assets/svgicons/arrow_drop_down.svg';
 import ArrowDropDownUpIcon from '../../../Assets/svgicons/arrow_drop_down (1).svg';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface JumpToPageModalProps {
   visible: boolean;
@@ -33,6 +35,8 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
   onJump,
 }) => {
   const [pageInput, setPageInput] = useState<string>(String(currentPage));
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, mode), [colors, mode]);
 
   useEffect(() => {
     if (visible) {
@@ -91,7 +95,7 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   <CancelIcon
                     width={24}
                     height={24}
-                    style={styles.closeIcon as any}
+                    style={[styles.closeIcon as any, { tintColor: colors.icon }]}
                   />
                 </TouchableOpacity>
               </View>
@@ -106,7 +110,7 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   <ArrowDropDownIcon
                     width={14}
                     height={14}
-                    style={styles.stepArrowIcon as any}
+                    style={[styles.stepArrowIcon as any, { tintColor: colors.icon }]}
                   />
                 </TouchableOpacity>
 
@@ -127,7 +131,7 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   <ArrowDropDownUpIcon
                     width={14}
                     height={14}
-                    style={styles.stepArrowIcon as any}
+                    style={[styles.stepArrowIcon as any, { tintColor: colors.icon }]}
                   />
                 </TouchableOpacity>
               </View>
@@ -148,14 +152,14 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#F4F5F7',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 24,
@@ -165,7 +169,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 16,
   },
@@ -181,7 +185,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     textAlign: 'center',
     flex: 1,
   },
@@ -197,7 +201,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   pageStepperBox: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 30,
     height: 56,
     flexDirection: 'row',
@@ -209,6 +213,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+    borderWidth: mode === 'dark' ? 1 : 0,
+    borderColor: colors.border,
   },
   stepArrowBtn: {
     width: 36,
@@ -224,16 +230,16 @@ const styles = StyleSheet.create({
   pageNumberInput: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     textAlign: 'center',
     minWidth: 60,
     paddingVertical: 0,
   },
   goButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingVertical: 13,
     paddingHorizontal: 64,
     alignSelf: 'center',
@@ -248,7 +254,7 @@ const styles = StyleSheet.create({
   goButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
   },
 });
 

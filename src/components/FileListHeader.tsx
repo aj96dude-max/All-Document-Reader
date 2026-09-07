@@ -1,6 +1,9 @@
+import React from 'react';
 import { Image, TouchableOpacity, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChevronBackwardIcon from '../../Assets/svgicons/chevron_backward.svg';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorPalette } from '../theme/colors';
 
 type prop = {
   title: string;
@@ -10,6 +13,8 @@ type prop = {
 
 const FileListHeader = ({ title, onBack }: prop) => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   const getHeaderTitle = (fileType: string): string => {
     switch (fileType.toLowerCase()) {
@@ -46,7 +51,7 @@ const FileListHeader = ({ title, onBack }: prop) => {
         <ChevronBackwardIcon
           width={24}
           height={24}
-          style={styles.icon as any}
+          style={[styles.icon as any, { tintColor: colors.icon }]}
         />
       </TouchableOpacity>
       <Text style={styles.title}>{headerTitle}</Text>
@@ -54,7 +59,7 @@ const FileListHeader = ({ title, onBack }: prop) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     marginTop: 30,
@@ -73,6 +78,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: colors.text,
   },
 });
 

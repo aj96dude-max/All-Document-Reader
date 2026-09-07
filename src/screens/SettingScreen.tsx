@@ -4,6 +4,10 @@ import {
   View,
   ScrollView,
   StatusBar,
+  Modal,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,7 +20,11 @@ import {
   shareApp,
   rateApp,
 } from '../services/SettingsService';
+import { useTheme, ThemeMode } from '../theme/ThemeContext';
+import { ColorPalette } from '../theme/colors';
 
+import LightIcon from '../../Assets/svgicons/light.svg';
+import DarkIcon from '../../Assets/svgicons/dark.svg';
 import WbIncandescentIcon from '../../Assets/svgicons/wb_incandescent.svg';
 import DeleteForeverIcon from '../../Assets/svgicons/delete_forever.svg';
 import SecurityIcon from '../../Assets/svgicons/security.svg';
@@ -28,6 +36,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const SettingScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [keepScreenOn, setKeepScreenOn] = useState<boolean>(true);
+  const { colors, mode, setMode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+
+  const isDarkMode = mode === 'dark' || (mode === 'system' && colors.background === '#141414');
 
   // Load saved settings
   const loadSettings = useCallback(async () => {
@@ -64,12 +76,20 @@ const SettingScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background as any} />
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        <SettingItem
+          icon={isDarkMode ? DarkIcon : LightIcon}
+          title="App Theme"
+          type="switch"
+          value={isDarkMode}
+          onValueChange={(val) => setMode(val ? 'dark' : 'light')}
+        />
+
         <SettingItem
           icon={WbIncandescentIcon}
           title="Keep Screen On"
@@ -110,10 +130,10 @@ const SettingScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6F8',
+    backgroundColor: colors.background,
   },
   scrollContainer: {
     flex: 1,

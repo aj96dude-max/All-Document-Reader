@@ -36,6 +36,8 @@ import {
 
 import SearchIcon from '../../../Assets/svgicons/search.svg';
 import CloseIcon from '../../../Assets/svgicons/close.svg';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -49,6 +51,9 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
   const [recentFiles, setRecentFiles] = useState<ScannedFile[]>([]);
   const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   // 3-dots Menu & Rename state
   const [selectedFileForMenu, setSelectedFileForMenu] = useState<ScannedFile | null>(null);
@@ -289,7 +294,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   container: {
     marginTop: 22,
     paddingHorizontal: 16,
@@ -305,7 +310,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text,
   },
   searchIconButton: {
     width: 36,
@@ -317,18 +322,18 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
-    tintColor: '#1F2937',
+    tintColor: colors.icon,
   },
   searchBarContainer: {
     height: 54,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 28,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -339,13 +344,13 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     resizeMode: 'contain',
-    tintColor: '#9CA3AF',
+    tintColor: colors.iconInactive,
     marginRight: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: '#1F2937',
+    color: colors.text,
     paddingVertical: 8,
   },
   clearButton: {
@@ -355,7 +360,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     resizeMode: 'contain',
-    tintColor: '#9CA3AF',
+    tintColor: colors.iconInactive,
   },
   listContainer: {
     marginTop: 2,
@@ -366,7 +371,7 @@ const styles = StyleSheet.create({
   },
   noSearchMatchText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: colors.textSecondary,
   },
 });
 

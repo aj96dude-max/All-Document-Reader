@@ -32,6 +32,8 @@ import {
 
 import EmptyFolderIcon from '../../Assets/svgicons/Empty Folder.svg';
 import ChevronBackwardIcon from '../../Assets/svgicons/chevron_backward.svg';
+import { useTheme } from '../theme/ThemeContext';
+import { ColorPalette } from '../theme/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -42,6 +44,9 @@ const TrashScreen = () => {
   const [trashFiles, setTrashFiles] = useState<TrashedFile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   // 3-dots Menu state
   const [selectedFileForMenu, setSelectedFileForMenu] = useState<TrashedFile | null>(null);
@@ -147,7 +152,7 @@ const TrashScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background as any} />
 
       {/* Header */}
       <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, 14) }]}>
@@ -215,10 +220,10 @@ const TrashScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6F8',
+    backgroundColor: colors.background,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -226,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: '#F5F6F8',
+    backgroundColor: colors.background,
   },
   backButton: {
     width: 36,
@@ -238,12 +243,12 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     resizeMode: 'contain',
-    tintColor: '#1F2937',
+    tintColor: colors.icon,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text,
     textAlign: 'center',
   },
   headerPlaceholder: {
@@ -258,12 +263,12 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     fontWeight: '500',
   },
   noticeHighlight: {
-    color: '#ED1C24',
+    color: colors.primary,
     fontWeight: '700',
   },
   center: {
@@ -297,19 +302,19 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1F2937',
+    color: colors.text,
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
 });

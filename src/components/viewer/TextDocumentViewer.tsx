@@ -6,6 +6,8 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface TextDocumentViewerProps {
   content: string;
@@ -18,6 +20,9 @@ const TextDocumentViewer: React.FC<TextDocumentViewerProps> = ({
   loading,
   error,
 }) => {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -46,16 +51,16 @@ const TextDocumentViewer: React.FC<TextDocumentViewerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   textScroll: {
     flex: 1,
-    backgroundColor: '#F4F5F7',
+    backgroundColor: colors.background,
   },
   textContent: {
     padding: 16,
   },
   paperCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: 8,
     padding: 20,
     minHeight: 400,
@@ -68,7 +73,7 @@ const styles = StyleSheet.create({
   textBody: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#1F2937',
+    color: colors.text,
   },
   centerContainer: {
     flex: 1,
@@ -79,12 +84,12 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   errorText: {
     fontSize: 14,
-    color: '#EF4444',
+    color: colors.primary,
     textAlign: 'center',
   },
 });

@@ -3,6 +3,8 @@ import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
 import ChevronBackwardIcon from '../../../Assets/svgicons/chevron_backward.svg';
 import ShareIcon from '../../../Assets/svgicons/share.svg';
+import { useTheme } from '../../theme/ThemeContext';
+import { ColorPalette } from '../../theme/colors';
 
 interface DocumentHeaderProps {
   title: string;
@@ -11,6 +13,8 @@ interface DocumentHeaderProps {
 }
 
 const DocumentHeader: React.FC<DocumentHeaderProps> = ({ title, onBack, onShare }) => {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -46,14 +50,14 @@ const DocumentHeader: React.FC<DocumentHeaderProps> = ({ title, onBack, onShare 
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ColorPalette) => StyleSheet.create({
   header: {
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: '#F4F5F7',
+    backgroundColor: colors.background,
   },
   headerIconBtn: {
     width: 36,
@@ -65,13 +69,13 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     resizeMode: 'contain',
-    tintColor: '#111827',
+    tintColor: colors.icon,
   },
   headerTitle: {
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     textAlign: 'center',
     marginHorizontal: 8,
   },
@@ -79,7 +83,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     resizeMode: 'contain',
-    tintColor: '#111827',
+    tintColor: colors.icon,
   },
 });
 

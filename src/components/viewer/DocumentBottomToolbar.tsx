@@ -5,7 +5,7 @@ import BorderColorIcon from '../../../Assets/svgicons/border_color.svg';
 import HeartMinusIcon from '../../../Assets/svgicons/favorite_active.svg';
 import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
 import DeleteForeverIcon from '../../../Assets/svgicons/delete_forever.svg';
-import SearchIcon from '../../../Assets/svgicons/search_shade.svg';
+import SearchIcon from '../../../Assets/svgicons/search_bold.svg';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 
 interface DocumentBottomToolbarProps {

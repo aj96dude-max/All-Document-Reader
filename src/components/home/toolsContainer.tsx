@@ -71,7 +71,7 @@ const ToolsContainer = () => {
   return (
     <View style={styles.container}>
       {tools.map(item => (
-        <View key={item.id} style={{ width: '25%' }}>
+        <View key={item.id} style={styles.toolItemWrapper}>
           <Tool
             title={item.title}
             icon={item.icon}
@@ -93,8 +93,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 25,
-    paddingHorizontal: 20,
+    paddingHorizontal: 6,
     rowGap: 20,
+  },
+  toolItemWrapper: {
+    width: '25%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

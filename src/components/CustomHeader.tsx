@@ -51,8 +51,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   icon: {
-    width: 24,
-    height: 24,
+    width: 30,
+    height: 30,
     resizeMode: 'contain',
   },
   title: {

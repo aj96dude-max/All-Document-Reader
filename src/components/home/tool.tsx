@@ -1,4 +1,4 @@
-import { Image, TouchableOpacity, StyleSheet, Text, View } from "react-native";
+import { TouchableOpacity, StyleSheet, Text, View } from "react-native";
 
 type ToolProps = {
   title: string;
@@ -8,45 +8,41 @@ type ToolProps = {
 
 const Tool = ({ title, icon: Icon, onPress }: ToolProps) => {
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.iconPlaceHolder}>
         <Icon width="100%" height="100%" />
       </View>
 
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title} numberOfLines={1}>
+        {title}
+      </Text>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    width: '22%',
-    minWidth: 75,
-    height: 90,
+    width: '100%',
+    height: 98,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
   },
 
-  pressed: {
-    opacity: 0.6,
-  },
-
   iconPlaceHolder: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-  },
-
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'contain',
+    width: 68,
+    height: 68,
+    borderRadius: 12,
   },
 
   title: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
 

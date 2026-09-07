@@ -4,7 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Image,
   Modal,
   TouchableWithoutFeedback,
   Animated,
@@ -13,7 +12,6 @@ import {
 } from 'react-native';
 
 import DeleteConfirmationModal from './DeleteConfirmationModal';
-
 
 import HeartMinusIcon from '../../../Assets/svgicons/favorite_active.svg';
 import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
@@ -47,8 +45,8 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
   onDelete,
   onShare,
 }) => {
-  const { colors } = useTheme();
-  const styles = React.useMemo(() => getStyles(colors), [colors]);
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, mode), [colors, mode]);
   const anim = useRef(new Animated.Value(0)).current;
   const { height: windowHeight } = Dimensions.get('window');
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
@@ -106,9 +104,13 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
   // Calculate clamped top position so menu never clips outside screen
   const targetTop =
     anchorPosition?.top !== undefined
-      ? Math.min(Math.max(anchorPosition.top - 10, 50), windowHeight - MENU_HEIGHT - 30)
+      ? Math.min(
+          Math.max(anchorPosition.top - 10, 50),
+          windowHeight - MENU_HEIGHT - 30,
+        )
       : undefined;
-  const targetRight = anchorPosition?.right !== undefined ? anchorPosition.right : 24;
+  const targetRight =
+    anchorPosition?.right !== undefined ? anchorPosition.right : 24;
 
   const cardStyle =
     targetTop !== undefined
@@ -147,103 +149,127 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
         animationType="none"
         onRequestClose={() => handleDismiss()}
       >
-      <TouchableWithoutFeedback onPress={() => handleDismiss()}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback onPress={() => {}}>
-            <Animated.View style={[styles.menuCard, cardStyle, animatedStyle]}>
-              {/* 1. Favorite / Unfavorite */}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleDismiss(onToggleFavorite)}
-                activeOpacity={0.7}
+        <TouchableWithoutFeedback onPress={() => handleDismiss()}>
+          <View style={styles.overlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Animated.View
+                style={[styles.menuCard, cardStyle, animatedStyle]}
               >
-                {isFavorite ? (
-                  <HeartMinusIcon width={22} height={22} style={styles.menuIcon as any} />
-                ) : (
-                  <FavoriteIcon width={22} height={22} style={styles.menuIcon as any} />
-                )}
-                <Text style={styles.menuText}>
-                  {isFavorite ? 'Unfavorite' : 'Favorite'}
-                </Text>
-              </TouchableOpacity>
+                {/* 1. Favorite / Unfavorite */}
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => handleDismiss(onToggleFavorite)}
+                  activeOpacity={0.7}
+                >
+                  {isFavorite ? (
+                    <HeartMinusIcon
+                      width={22}
+                      height={22}
+                      style={styles.menuIcon as any}
+                    />
+                  ) : (
+                    <FavoriteIcon
+                      width={22}
+                      height={22}
+                      style={styles.menuIcon as any}
+                    />
+                  )}
+                  <Text style={styles.menuText}>
+                    {isFavorite ? 'Unfavorite' : 'Favorite'}
+                  </Text>
+                </TouchableOpacity>
 
-              {/* 2. Rename */}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleDismiss(onRename)}
-                activeOpacity={0.7}
-              >
-                <BorderColorIcon width={22} height={22} style={styles.menuIcon as any} />
-                <Text style={styles.menuText}>Rename</Text>
-              </TouchableOpacity>
+                {/* 2. Rename */}
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => handleDismiss(onRename)}
+                  activeOpacity={0.7}
+                >
+                  <BorderColorIcon
+                    width={22}
+                    height={22}
+                    style={styles.menuIcon as any}
+                  />
+                  <Text style={styles.menuText}>Rename</Text>
+                </TouchableOpacity>
 
-              {/* 3. Delete */}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={handleShowDelete}
-                activeOpacity={0.7}
-              >
-                <DeleteForeverIcon width={22} height={22} style={styles.menuIcon as any} />
-                <Text style={styles.menuText}>Delete</Text>
-              </TouchableOpacity>
+                {/* 3. Delete */}
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={handleShowDelete}
+                  activeOpacity={0.7}
+                >
+                  <DeleteForeverIcon
+                    width={22}
+                    height={22}
+                    style={styles.menuIcon as any}
+                  />
+                  <Text style={styles.menuText}>Delete</Text>
+                </TouchableOpacity>
 
-              {/* 4. Share */}
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleDismiss(onShare)}
-                activeOpacity={0.7}
-              >
-                <ShareIcon width={22} height={22} style={styles.menuIcon as any} />
-                <Text style={styles.menuText}>Share</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
-    <DeleteConfirmationModal
-      visible={showDeleteConfirm}
-      onClose={handleCancelDelete}
-      onConfirm={handleConfirmDelete}
-    />
+                {/* 4. Share */}
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => handleDismiss(onShare)}
+                  activeOpacity={0.7}
+                >
+                  <ShareIcon
+                    width={22}
+                    height={22}
+                    style={styles.menuIcon as any}
+                  />
+                  <Text style={styles.menuText}>Share</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+      <DeleteConfirmationModal
+        visible={showDeleteConfirm}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-  },
-  menuCard: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 22,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    width: MENU_WIDTH,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 11,
-  },
-  menuIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-    tintColor: colors.primary,
-    marginRight: 14,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-});
+const getStyles = (colors: ColorPalette, mode: string) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+    },
+    menuCard: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 22,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      width: MENU_WIDTH,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.2,
+      shadowRadius: 12,
+      elevation: 12,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 11,
+    },
+    menuIcon: {
+      width: 22,
+      height: 22,
+      color: colors.icon,
+      tintColor: colors.primary,
+      resizeMode: 'contain',
+      marginRight: 14,
+    },
+    menuText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+  });
 
 export default FileActionMenuModal;

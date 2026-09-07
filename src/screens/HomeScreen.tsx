@@ -18,7 +18,8 @@ import { useTheme } from '../theme/ThemeContext';
 import { ColorPalette } from '../theme/colors';
 
 const HomeScreen = () => {
-  const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
+  const [isPermissionModalVisible, setIsPermissionModalVisible] =
+    useState<boolean>(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
   const { colors, mode } = useTheme();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
@@ -50,22 +51,25 @@ const HomeScreen = () => {
             }
           }
         }
-      }
+      },
     );
     return () => subscription.remove();
   }, []);
 
-  const requirePermission = useCallback(async (actionOnGranted?: () => void) => {
-    const granted = await checkStoragePermission();
-    if (granted) {
-      actionOnGranted?.();
-      return;
-    }
-    if (actionOnGranted) {
-      pendingActionRef.current = actionOnGranted;
-    }
-    setIsPermissionModalVisible(true);
-  }, []);
+  const requirePermission = useCallback(
+    async (actionOnGranted?: () => void) => {
+      const granted = await checkStoragePermission();
+      if (granted) {
+        actionOnGranted?.();
+        return;
+      }
+      if (actionOnGranted) {
+        pendingActionRef.current = actionOnGranted;
+      }
+      setIsPermissionModalVisible(true);
+    },
+    [],
+  );
 
   const handleAllowPermission = async () => {
     const granted = await requestStoragePermission(false);
@@ -89,7 +93,14 @@ const HomeScreen = () => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
+        <StatusBar
+          barStyle={
+            mode === 'dark' ||
+            (mode === 'system' && colors.background === '#141414')
+              ? 'light-content'
+              : 'dark-content'
+          }
+        />
         <ToolsContainer onRequirePermission={requirePermission} />
         <RecentDocuments onRequirePermission={requirePermission} />
       </ScrollView>
@@ -104,18 +115,19 @@ const HomeScreen = () => {
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  contentContainer: {
-    paddingBottom: 24,
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    contentContainer: {
+      paddingBottom: 24,
+    },
+  });
 
 export default HomeScreen;

@@ -2,10 +2,8 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   Pressable,
   StyleSheet,
-  ImageSourcePropType,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { ColorPalette } from '../../theme/colors';

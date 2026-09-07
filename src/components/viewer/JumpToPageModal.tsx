@@ -4,7 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Image,
   Modal,
   TextInput,
   TouchableWithoutFeedback,
@@ -12,8 +11,8 @@ import {
 } from 'react-native';
 
 import CancelIcon from '../../../Assets/svgicons/cancel.svg';
-import ArrowDropDownIcon from '../../../Assets/svgicons/arrow_drop_down.svg';
-import ArrowDropDownUpIcon from '../../../Assets/svgicons/arrow_drop_down (1).svg';
+import ArrowDropDownUpIcon from '../../../Assets/svgicons/arrow_drop_down.svg';
+import ArrowDropDownIcon from '../../../Assets/svgicons/arrow_drop_down (1).svg';
 import { useTheme } from '../../theme/ThemeContext';
 import { ColorPalette } from '../../theme/colors';
 
@@ -46,7 +45,10 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
 
   const handleStep = (delta: number) => {
     const currentNum = parseInt(pageInput, 10) || currentPage;
-    const nextNum = Math.min(Math.max(currentNum + delta, 1), Math.max(totalPages, 1));
+    const nextNum = Math.min(
+      Math.max(currentNum + delta, 1),
+      Math.max(totalPages, 1),
+    );
     setPageInput(String(nextNum));
   };
 
@@ -57,7 +59,10 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
       onJump(target);
       onClose();
     } else {
-      Alert.alert('Invalid Page', `Please enter a page number between 1 and ${maxPage}`);
+      Alert.alert(
+        'Invalid Page',
+        `Please enter a page number between 1 and ${maxPage}`,
+      );
     }
   };
 
@@ -95,7 +100,7 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   <CancelIcon
                     width={24}
                     height={24}
-                    style={[styles.closeIcon as any, { tintColor: colors.icon }]}
+                    style={[styles.closeIcon as any, { color: colors.icon }]}
                   />
                 </TouchableOpacity>
               </View>
@@ -110,7 +115,10 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   <ArrowDropDownIcon
                     width={14}
                     height={14}
-                    style={[styles.stepArrowIcon as any, { tintColor: colors.icon }]}
+                    style={[
+                      styles.stepArrowIcon as any,
+                      { color: colors.icon },
+                    ]}
                   />
                 </TouchableOpacity>
 
@@ -131,7 +139,10 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
                   <ArrowDropDownUpIcon
                     width={14}
                     height={14}
-                    style={[styles.stepArrowIcon as any, { tintColor: colors.icon }]}
+                    style={[
+                      styles.stepArrowIcon as any,
+                      { color: colors.icon },
+                    ]}
                   />
                 </TouchableOpacity>
               </View>
@@ -152,110 +163,111 @@ const JumpToPageModal: React.FC<JumpToPageModalProps> = ({
   );
 };
 
-const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-  },
-  modalHandle: {
-    width: 64,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  headerSpacer: {
-    width: 28,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-    flex: 1,
-  },
-  closeBtn: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  pageStepperBox: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 30,
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    borderWidth: mode === 'dark' ? 1 : 0,
-    borderColor: colors.border,
-  },
-  stepArrowBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepArrowIcon: {
-    width: 14,
-    height: 14,
-    resizeMode: 'contain',
-  },
-  pageNumberInput: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-    minWidth: 60,
-    paddingVertical: 0,
-  },
-  goButton: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 13,
-    paddingHorizontal: 64,
-    alignSelf: 'center',
-    marginTop: 24,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  goButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-  },
-});
+const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+      justifyContent: 'flex-end',
+    },
+    modalContainer: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      paddingHorizontal: 24,
+      paddingTop: 12,
+    },
+    modalHandle: {
+      width: 64,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.border,
+      alignSelf: 'center',
+      marginBottom: 16,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    headerSpacer: {
+      width: 28,
+    },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      flex: 1,
+    },
+    closeBtn: {
+      width: 28,
+      height: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeIcon: {
+      width: 24,
+      height: 24,
+      resizeMode: 'contain',
+    },
+    pageStepperBox: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 30,
+      height: 56,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+      borderWidth: mode === 'dark' ? 1 : 0,
+      borderColor: colors.border,
+    },
+    stepArrowBtn: {
+      width: 36,
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    stepArrowIcon: {
+      width: 14,
+      height: 14,
+      resizeMode: 'contain',
+    },
+    pageNumberInput: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      minWidth: 60,
+      paddingVertical: 0,
+    },
+    goButton: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 30,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 13,
+      paddingHorizontal: 64,
+      alignSelf: 'center',
+      marginTop: 24,
+      marginBottom: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    goButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+    },
+  });
 
 export default JumpToPageModal;

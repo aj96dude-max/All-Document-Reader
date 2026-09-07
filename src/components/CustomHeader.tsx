@@ -16,7 +16,7 @@ const CustomHeader = ({ title, onMenuPress }: Props) => {
   const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 12) }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <TouchableOpacity
         style={styles.iconButton}
         onPress={onMenuPress}
@@ -39,37 +39,39 @@ const CustomHeader = ({ title, onMenuPress }: Props) => {
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    backgroundColor: colors.background,
-  },
-  iconButton: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  icon: {
-    width: 30,
-    height: 30,
-    resizeMode: 'contain',
-  },
-  title: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 32,
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+      paddingHorizontal: 20,
+      paddingBottom: 14,
+      backgroundColor: colors.background,
+    },
+    iconButton: {
+      width: 32,
+      height: 32,
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+    },
+    icon: {
+      width: 30,
+      height: 30,
+      resizeMode: 'contain',
+      color: colors.icon,
+    },
+    title: {
+      flex: 1,
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    placeholder: {
+      width: 32,
+    },
+  });
 
 export default CustomHeader;

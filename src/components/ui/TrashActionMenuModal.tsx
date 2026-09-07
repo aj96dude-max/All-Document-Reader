@@ -11,8 +11,8 @@ import {
   Dimensions,
   Easing,
 } from 'react-native';
-import Back from "../../../Assets/svgicons/chevron_backward.svg"
-import Delte from "../../../Assets/svgicons/delete_forever.svg"
+import ReStore from '../../../Assets/svgicons/restore_from_trash.svg';
+import Delte from '../../../Assets/svgicons/delete_forever.svg';
 import { useTheme } from '../../theme/ThemeContext';
 import { ColorPalette } from '../../theme/colors';
 
@@ -70,9 +70,13 @@ const TrashActionMenuModal: React.FC<TrashActionMenuModalProps> = ({
   // Calculate clamped top position so menu never clips outside screen
   const targetTop =
     anchorPosition?.top !== undefined
-      ? Math.min(Math.max(anchorPosition.top - 10, 50), windowHeight - MENU_HEIGHT - 30)
+      ? Math.min(
+          Math.max(anchorPosition.top - 10, 50),
+          windowHeight - MENU_HEIGHT - 30,
+        )
       : undefined;
-  const targetRight = anchorPosition?.right !== undefined ? anchorPosition.right : 24;
+  const targetRight =
+    anchorPosition?.right !== undefined ? anchorPosition.right : 24;
 
   const cardStyle =
     targetTop !== undefined
@@ -120,10 +124,13 @@ const TrashActionMenuModal: React.FC<TrashActionMenuModalProps> = ({
                 onPress={() => handleDismiss(onRestore)}
                 activeOpacity={0.7}
               >
-                <Back 
-                width={24}
-                height={24}
-                style={[styles.menuIcon as any, { tintColor: colors.primary }]}
+                <ReStore
+                  width={24}
+                  height={24}
+                  style={[
+                    styles.menuIcon as any,
+                    { tintColor: colors.primary },
+                  ]}
                 />
                 <Text style={styles.menuText}>Restore</Text>
               </TouchableOpacity>
@@ -134,7 +141,14 @@ const TrashActionMenuModal: React.FC<TrashActionMenuModalProps> = ({
                 onPress={() => handleDismiss(onDeletePermanently)}
                 activeOpacity={0.7}
               >
-                <Delte width={24} height={24} style={[styles.menuIcon as any, { tintColor: colors.primary }]} />
+                <Delte
+                  width={24}
+                  height={24}
+                  style={[
+                    styles.menuIcon as any,
+                    { tintColor: colors.primary },
+                  ]}
+                />
                 <Text style={styles.menuText}>Delete</Text>
               </TouchableOpacity>
             </Animated.View>
@@ -145,42 +159,44 @@ const TrashActionMenuModal: React.FC<TrashActionMenuModalProps> = ({
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-  },
-  menuCard: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 22,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    width: MENU_WIDTH,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  menuIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-    marginRight: 14,
-  },
-  restoreIcon: {
-    transform: [{ rotate: '90deg' }],
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.overlay,
+    },
+    menuCard: {
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 22,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      width: MENU_WIDTH,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.2,
+      shadowRadius: 12,
+      elevation: 12,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+    },
+    menuIcon: {
+      width: 22,
+      height: 22,
+      resizeMode: 'contain',
+      marginRight: 14,
+      color: colors.icon,
+    },
+    restoreIcon: {
+      transform: [{ rotate: '90deg' }],
+    },
+    menuText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+  });
 
 export default TrashActionMenuModal;

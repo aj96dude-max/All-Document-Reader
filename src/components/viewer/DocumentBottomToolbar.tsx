@@ -33,126 +33,130 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
 
   return (
     <>
-    <View
-      style={[
-        styles.bottomToolbar,
-        { paddingBottom: Math.max(bottomInset, 12) },
-      ]}
-    >
-      <TouchableOpacity
-        style={styles.toolbarItem}
-        onPress={onRename}
-        activeOpacity={0.7}
+      <View
+        style={[
+          styles.bottomToolbar,
+          { paddingBottom: Math.max(bottomInset, 12) },
+        ]}
       >
-        <BorderColorIcon
-          width={22}
-          height={22}
-          style={styles.toolbarIcon as any}
-        />
-        <Text style={styles.toolbarLabel}>Rename</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.toolbarItem}
-        onPress={onToggleFavorite}
-        activeOpacity={0.7}
-      >
-        {isFavorite ? (
-          <HeartMinusIcon
-            width={22}
-            height={22}
-            style={[styles.toolbarIcon as any, styles.favoriteActiveIcon as any]}
-          />
-        ) : (
-          <FavoriteIcon
-            width={22}
-            height={22}
-            style={[styles.toolbarIcon as any]}
-          />
-        )}
-        <Text
-          style={[
-            styles.toolbarLabel,
-            isFavorite && styles.favoriteActiveLabel,
-          ]}
+        <TouchableOpacity
+          style={styles.toolbarItem}
+          onPress={onRename}
+          activeOpacity={0.7}
         >
-          {isFavorite ? 'Unfavorite' : 'Favorite'}
-        </Text>
-      </TouchableOpacity>
+          <BorderColorIcon
+            width={22}
+            height={22}
+            style={styles.toolbarIcon as any}
+          />
+          <Text style={styles.toolbarLabel}>Rename</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.toolbarItem}
-        onPress={() => setShowDeleteConfirm(true)}
-        activeOpacity={0.7}
-      >
-        <DeleteForeverIcon
-          width={22}
-          height={22}
-          style={styles.toolbarIcon as any}
-        />
-        <Text style={styles.toolbarLabel}>Delete</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.toolbarItem}
+          onPress={onToggleFavorite}
+          activeOpacity={0.7}
+        >
+          {isFavorite ? (
+            <HeartMinusIcon
+              width={22}
+              height={22}
+              style={[
+                styles.toolbarIcon as any,
+                styles.favoriteActiveIcon as any,
+              ]}
+            />
+          ) : (
+            <FavoriteIcon
+              width={22}
+              height={22}
+              style={[styles.toolbarIcon as any]}
+            />
+          )}
+          <Text
+            style={[
+              styles.toolbarLabel,
+              isFavorite && styles.favoriteActiveLabel,
+            ]}
+          >
+            {isFavorite ? 'Unfavorite' : 'Favorite'}
+          </Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.toolbarItem}
-        onPress={onJumpToPage}
-        activeOpacity={0.7}
-      >
-        <SearchIcon
-          width={22}
-          height={22}
-          style={styles.toolbarIcon as any}
-        />
-        <Text style={styles.toolbarLabel}>Jump to</Text>
-      </TouchableOpacity>
-    </View>
-    <DeleteConfirmationModal
-      visible={showDeleteConfirm}
-      onClose={() => setShowDeleteConfirm(false)}
-      onConfirm={() => {
-        setShowDeleteConfirm(false);
-        onDelete();
-      }}
-    />
+        <TouchableOpacity
+          style={styles.toolbarItem}
+          onPress={() => setShowDeleteConfirm(true)}
+          activeOpacity={0.7}
+        >
+          <DeleteForeverIcon
+            width={22}
+            height={22}
+            style={styles.toolbarIcon as any}
+          />
+          <Text style={styles.toolbarLabel}>Delete</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.toolbarItem}
+          onPress={onJumpToPage}
+          activeOpacity={0.7}
+        >
+          <SearchIcon
+            width={22}
+            height={22}
+            style={styles.toolbarIcon as any}
+          />
+          <Text style={styles.toolbarLabel}>Jump to</Text>
+        </TouchableOpacity>
+      </View>
+      <DeleteConfirmationModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          onDelete();
+        }}
+      />
     </>
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  bottomToolbar: {
-    flexDirection: 'row',
-    backgroundColor: colors.surfaceElevated,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: 10,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  toolbarItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 4,
-  },
-  toolbarIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-    tintColor: colors.icon,
-    marginBottom: 4,
-  },
-  favoriteActiveIcon: {
-    tintColor: colors.primary,
-  },
-  toolbarLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  favoriteActiveLabel: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    bottomToolbar: {
+      flexDirection: 'row',
+      backgroundColor: colors.surfaceElevated,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 10,
+      alignItems: 'center',
+      justifyContent: 'space-around',
+    },
+    toolbarItem: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 4,
+    },
+    toolbarIcon: {
+      width: 22,
+      height: 22,
+      resizeMode: 'contain',
+      marginBottom: 4,
+      color: colors.icon,
+    },
+    favoriteActiveIcon: {
+      tintColor: colors.primary,
+    },
+    toolbarLabel: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.text,
+    },
+    favoriteActiveLabel: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
+  });
 
 export default DocumentBottomToolbar;

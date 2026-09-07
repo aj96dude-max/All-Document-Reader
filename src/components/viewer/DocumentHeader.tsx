@@ -12,7 +12,11 @@ interface DocumentHeaderProps {
   onShare: () => void;
 }
 
-const DocumentHeader: React.FC<DocumentHeaderProps> = ({ title, onBack, onShare }) => {
+const DocumentHeader: React.FC<DocumentHeaderProps> = ({
+  title,
+  onBack,
+  onShare,
+}) => {
   const { colors } = useTheme();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
   return (
@@ -27,6 +31,7 @@ const DocumentHeader: React.FC<DocumentHeaderProps> = ({ title, onBack, onShare 
           width={22}
           height={22}
           style={styles.headerBackIcon as any}
+          color={colors.icon}
         />
       </TouchableOpacity>
 
@@ -50,41 +55,43 @@ const DocumentHeader: React.FC<DocumentHeaderProps> = ({ title, onBack, onShare 
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    backgroundColor: colors.background,
-  },
-  headerIconBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerBackIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-    tintColor: colors.icon,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-    marginHorizontal: 8,
-  },
-  headerShareIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-    tintColor: colors.icon,
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    header: {
+      height: 56,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      backgroundColor: colors.background,
+    },
+    headerIconBtn: {
+      width: 36,
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerBackIcon: {
+      width: 22,
+      height: 22,
+      resizeMode: 'contain',
+      color: colors.icon,
+    },
+    headerTitle: {
+      flex: 1,
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      marginHorizontal: 8,
+    },
+    headerShareIcon: {
+      width: 22,
+      height: 22,
+      resizeMode: 'contain',
+      tintColor: colors.icon,
+      color: colors.icon,
+    },
+  });
 
 export default DocumentHeader;

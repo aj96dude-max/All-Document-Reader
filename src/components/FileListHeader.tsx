@@ -51,7 +51,7 @@ const FileListHeader = ({ title, onBack }: prop) => {
         <ChevronBackwardIcon
           width={24}
           height={24}
-          style={[styles.icon as any, { tintColor: colors.icon }]}
+          style={[styles.icon as any, { color: colors.icon }]}
         />
       </TouchableOpacity>
       <Text style={styles.title}>{headerTitle}</Text>
@@ -59,27 +59,33 @@ const FileListHeader = ({ title, onBack }: prop) => {
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    marginTop: 30,
-    alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 30,
-  },
-  backButton: {
-    padding: 4,
-    marginRight: 10,
-  },
-  icon: {
-    width: 24,
-    height: 24,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      marginTop: 16,
+      marginBottom: 16,
+      alignItems: 'center',
+      width: '100%',
+      paddingHorizontal: 18,
+      justifyContent: 'space-between',
+      paddingBottom: 14,
+      backgroundColor: colors.background,
+    },
+    backButton: {
+      padding: 0,
+    },
+    icon: {
+      width: 24,
+      height: 24,
+    },
+    title: {
+      flex: 1,
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+    },
+  });
 
 export default FileListHeader;

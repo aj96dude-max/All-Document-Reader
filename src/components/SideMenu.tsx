@@ -4,7 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Image,
   Modal,
   TouchableWithoutFeedback,
   Animated,
@@ -85,10 +84,12 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
       animationType="none"
       onRequestClose={() => handleDismiss()}
     >
-      <View style={styles.overlayContainer}>
+      <View style={[styles.overlayContainer, { paddingTop: insets.top }]}>
         {/* Dark Dimmed Backdrop */}
         <TouchableWithoutFeedback onPress={() => handleDismiss()}>
-          <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+          <Animated.View
+            style={[styles.backdrop, { opacity: backdropOpacity }]}
+          />
         </TouchableWithoutFeedback>
 
         {/* Sliding Drawer Container */}
@@ -105,10 +106,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
         >
           {/* Header Illustration */}
           <View style={styles.headerSection}>
-            <AppIcon
-              width={120}
-              height={120}
-            />
+            <AppIcon width={120} height={120} />
             <Text style={styles.appTitle}>All Document Reader</Text>
           </View>
 
@@ -165,71 +163,72 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose }) => {
   );
 };
 
-const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
-  overlayContainer: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#000000',
-  },
-  drawer: {
-    height: '100%',
-    backgroundColor: colors.background,
-    shadowColor: '#000',
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 16,
-  },
-  headerSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  appIcon: {
-    width: 120,
-    height: 120,
-  },
-  appTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-    marginTop: 14,
-  },
-  divider: {
-    height: 1.5,
-    backgroundColor: mode === 'dark' ? colors.border : '#111827',
-    width: '100%',
-  },
-  menuList: {
-    paddingTop: 20,
-    paddingHorizontal: 22,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-  },
-  menuIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-    tintColor: colors.icon,
-    marginRight: 18,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-  },
-});
+const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') =>
+  StyleSheet.create({
+    overlayContainer: {
+      flex: 1,
+      flexDirection: 'row',
+    },
+    backdrop: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: '#000000',
+    },
+    drawer: {
+      height: '100%',
+      backgroundColor: colors.background,
+      shadowColor: '#000',
+      shadowOffset: { width: 4, height: 0 },
+      shadowOpacity: 0.25,
+      shadowRadius: 16,
+      elevation: 16,
+    },
+    headerSection: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+    },
+    appIcon: {
+      width: 120,
+      height: 120,
+    },
+    appTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      marginTop: 14,
+    },
+    divider: {
+      height: 1.5,
+      backgroundColor: mode === 'dark' ? colors.border : '#111827',
+      width: '100%',
+    },
+    menuList: {
+      paddingTop: 20,
+      paddingHorizontal: 22,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 18,
+    },
+    menuIcon: {
+      width: 24,
+      height: 24,
+      resizeMode: 'contain',
+      color: colors.icon,
+      marginRight: 18,
+    },
+    menuText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+    },
+  });
 
 export default SideMenu;

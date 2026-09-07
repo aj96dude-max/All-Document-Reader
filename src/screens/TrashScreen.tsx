@@ -274,7 +274,7 @@ const getStyles = (colors: ColorPalette) =>
       width: 22,
       height: 22,
       resizeMode: 'contain',
-      tintColor: colors.icon,
+      color: colors.icon,
     },
     headerTitle: {
       fontSize: 18,

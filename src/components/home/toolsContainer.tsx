@@ -13,10 +13,33 @@ import TxtIcon from '../../../Assets/svgicons/txtx.svg';
 import EpubIcon from '../../../Assets/svgicons/epub.svg';
 import RtfIcon from '../../../Assets/svgicons/rtf.svg';
 
+import { checkStoragePermission } from '../../services/FileScanner';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const ToolsContainer = () => {
+type ToolsContainerProps = {
+  onRequirePermission?: (onGranted: () => void) => void;
+};
+
+const ToolsContainer: React.FC<ToolsContainerProps> = ({ onRequirePermission }) => {
   const navigation = useNavigation<NavigationProp>();
+
+  const handleToolPress = async (fileType: string) => {
+    const proceed = () => {
+      navigation.navigate('FileList', { fileType });
+    };
+
+    if (onRequirePermission) {
+      onRequirePermission(proceed);
+      return;
+    }
+
+    const granted = await checkStoragePermission();
+    if (granted) {
+      proceed();
+    }
+  };
+
   const tools = [
     {
       id: 1,
@@ -75,9 +98,7 @@ const ToolsContainer = () => {
           <Tool
             title={item.title}
             icon={item.icon}
-            onPress={() => {
-              navigation.navigate('FileList', { fileType: item.type });
-            }}
+            onPress={() => handleToolPress(item.type)}
           />
         </View>
       ))}

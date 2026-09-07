@@ -25,7 +25,7 @@ import {
   toggleFavorite,
   updateFavoriteFile,
 } from '../../services/FavoritesService';
-import { renameFile, shareFile } from '../../services/FileScanner';
+import { renameFile, shareFile, checkStoragePermission } from '../../services/FileScanner';
 import { moveToTrash } from '../../services/TrashService';
 import {
   formatBytes,
@@ -39,7 +39,11 @@ import CloseIcon from '../../../Assets/svgicons/close.svg';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const RecentDocuments = () => {
+type RecentDocumentsProps = {
+  onRequirePermission?: (onGranted: () => void) => void;
+};
+
+const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }) => {
   const navigation = useNavigation<NavigationProp>();
 
   const [recentFiles, setRecentFiles] = useState<ScannedFile[]>([]);
@@ -70,9 +74,20 @@ const RecentDocuments = () => {
   );
 
   const handleFilePress = async (file: ScannedFile) => {
-    // Bump recent order
-    await addRecentDocument(file);
-    navigation.navigate('FileViewer', { file });
+    const proceed = async () => {
+      await addRecentDocument(file);
+      navigation.navigate('FileViewer', { file });
+    };
+
+    if (onRequirePermission) {
+      onRequirePermission(proceed);
+      return;
+    }
+
+    const granted = await checkStoragePermission();
+    if (granted) {
+      await proceed();
+    }
   };
 
   const handleMorePress = async (file: ScannedFile, position?: { pageX: number; pageY: number }) => {

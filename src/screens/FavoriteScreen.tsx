@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,6 +9,8 @@ import {
   Image,
   RefreshControl,
   StatusBar,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,7 +18,13 @@ import { RootStackParamList, ScannedFile } from '../types/types';
 import FileListItem from '../components/ui/FileListItem';
 import FileActionMenuModal from '../components/ui/FileActionMenuModal';
 import RenameModal from '../components/viewer/RenameModal';
-import { renameFile, shareFile } from '../services/FileScanner';
+import FilePermissionModal from '../components/ui/FilePermissionModal';
+import {
+  renameFile,
+  shareFile,
+  checkStoragePermission,
+  requestStoragePermission,
+} from '../services/FileScanner';
 import { moveToTrash } from '../services/TrashService';
 import {
   getFavorites,
@@ -44,6 +52,10 @@ const FavoriteScreen = () => {
   const [favorites, setFavorites] = useState<ScannedFile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  // Permission state
+  const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
+  const pendingActionRef = useRef<(() => void) | null>(null);
 
   // 3-dots Menu & Rename state
   const [selectedFileForMenu, setSelectedFileForMenu] = useState<ScannedFile | null>(null);
@@ -75,9 +87,56 @@ const FavoriteScreen = () => {
     }, [loadFavorites])
   );
 
+  // Listen for when user returns from Android Settings
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      'change',
+      async (nextState: AppStateStatus) => {
+        if (nextState === 'active') {
+          const granted = await checkStoragePermission();
+          if (granted) {
+            setIsPermissionModalVisible(false);
+            if (pendingActionRef.current) {
+              const action = pendingActionRef.current;
+              pendingActionRef.current = null;
+              action();
+            }
+          }
+        }
+      }
+    );
+    return () => subscription.remove();
+  }, []);
+
   const handleFilePress = async (file: ScannedFile) => {
-    await addRecentDocument(file);
-    navigation.navigate('FileViewer', { file });
+    const proceed = async () => {
+      await addRecentDocument(file);
+      navigation.navigate('FileViewer', { file });
+    };
+
+    const granted = await checkStoragePermission();
+    if (!granted) {
+      pendingActionRef.current = proceed;
+      setIsPermissionModalVisible(true);
+      return;
+    }
+
+    await proceed();
+  };
+
+  const handleAllowPermission = async () => {
+    const granted = await requestStoragePermission(false);
+    setIsPermissionModalVisible(false);
+    if (granted && pendingActionRef.current) {
+      const action = pendingActionRef.current;
+      pendingActionRef.current = null;
+      action();
+    }
+  };
+
+  const handleSkipPermission = () => {
+    setIsPermissionModalVisible(false);
+    pendingActionRef.current = null;
   };
 
   const handleMorePress = (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
@@ -244,6 +303,13 @@ const FavoriteScreen = () => {
         isRenaming={isRenaming}
         onClose={() => setIsRenameVisible(false)}
         onSave={handleRenameSave}
+      />
+
+      {/* File Access Permission Modal */}
+      <FilePermissionModal
+        visible={isPermissionModalVisible}
+        onAllow={handleAllowPermission}
+        onSkip={handleSkipPermission}
       />
     </View>
   );

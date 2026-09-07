@@ -12,6 +12,8 @@ import {
   Easing,
 } from 'react-native';
 
+import DeleteConfirmationModal from './DeleteConfirmationModal';
+
 
 import HeartMinusIcon from '../../../Assets/svgicons/favorite_active.svg';
 import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
@@ -45,6 +47,7 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
 }) => {
   const anim = useRef(new Animated.Value(0)).current;
   const { height: windowHeight } = Dimensions.get('window');
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -72,7 +75,29 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
     });
   };
 
-  if (!visible) return null;
+  const handleShowDelete = () => {
+    Animated.timing(anim, {
+      toValue: 0,
+      duration: 90,
+      easing: Easing.in(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => {
+      setShowDeleteConfirm(true);
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteConfirm(false);
+    onClose();
+    onDelete();
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    onClose();
+  };
+
+  if (!visible && !showDeleteConfirm) return null;
 
   // Calculate clamped top position so menu never clips outside screen
   const targetTop =
@@ -111,12 +136,13 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="none"
-      onRequestClose={() => handleDismiss()}
-    >
+    <>
+      <Modal
+        visible={visible && !showDeleteConfirm}
+        transparent={true}
+        animationType="none"
+        onRequestClose={() => handleDismiss()}
+      >
       <TouchableWithoutFeedback onPress={() => handleDismiss()}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback onPress={() => {}}>
@@ -150,7 +176,7 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
               {/* 3. Delete */}
               <TouchableOpacity
                 style={styles.menuItem}
-                onPress={() => handleDismiss(onDelete)}
+                onPress={handleShowDelete}
                 activeOpacity={0.7}
               >
                 <DeleteForeverIcon width={22} height={22} style={styles.menuIcon as any} />
@@ -171,6 +197,12 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
         </View>
       </TouchableWithoutFeedback>
     </Modal>
+    <DeleteConfirmationModal
+      visible={showDeleteConfirm}
+      onClose={handleCancelDelete}
+      onConfirm={handleConfirmDelete}
+    />
+    </>
   );
 };
 

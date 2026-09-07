@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
 import BorderColorIcon from '../../../Assets/svgicons/border_color.svg';
@@ -6,6 +6,7 @@ import HeartMinusIcon from '../../../Assets/svgicons/favorite_active.svg';
 import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
 import DeleteForeverIcon from '../../../Assets/svgicons/delete_forever.svg';
 import SearchIcon from '../../../Assets/svgicons/search_shade.svg';
+import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 
 interface DocumentBottomToolbarProps {
   isFavorite: boolean;
@@ -24,7 +25,10 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
   onDelete,
   onJumpToPage,
 }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   return (
+    <>
     <View
       style={[
         styles.bottomToolbar,
@@ -74,7 +78,7 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
 
       <TouchableOpacity
         style={styles.toolbarItem}
-        onPress={onDelete}
+        onPress={() => setShowDeleteConfirm(true)}
         activeOpacity={0.7}
       >
         <DeleteForeverIcon
@@ -98,6 +102,15 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
         <Text style={styles.toolbarLabel}>Jump to</Text>
       </TouchableOpacity>
     </View>
+    <DeleteConfirmationModal
+      visible={showDeleteConfirm}
+      onClose={() => setShowDeleteConfirm(false)}
+      onConfirm={() => {
+        setShowDeleteConfirm(false);
+        onDelete();
+      }}
+    />
+    </>
   );
 };
 

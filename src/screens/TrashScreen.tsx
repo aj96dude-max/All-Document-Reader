@@ -49,8 +49,12 @@ const TrashScreen = () => {
   const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   // 3-dots Menu state
-  const [selectedFileForMenu, setSelectedFileForMenu] = useState<TrashedFile | null>(null);
-  const [menuAnchorPosition, setMenuAnchorPosition] = useState<{ top: number; right: number } | null>(null);
+  const [selectedFileForMenu, setSelectedFileForMenu] =
+    useState<TrashedFile | null>(null);
+  const [menuAnchorPosition, setMenuAnchorPosition] = useState<{
+    top: number;
+    right: number;
+  } | null>(null);
   const [isMenuVisible, setIsMenuVisible] = useState<boolean>(false);
 
   const loadTrash = useCallback(async (isPullRefresh = false) => {
@@ -73,10 +77,13 @@ const TrashScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadTrash();
-    }, [loadTrash])
+    }, [loadTrash]),
   );
 
-  const handleMorePress = (file: TrashedFile, position?: { pageX: number; pageY: number }) => {
+  const handleMorePress = (
+    file: TrashedFile,
+    position?: { pageX: number; pageY: number },
+  ) => {
     setSelectedFileForMenu(file);
     if (position) {
       setMenuAnchorPosition({ top: position.pageY, right: 24 });
@@ -91,7 +98,9 @@ const TrashScreen = () => {
     const target = selectedFileForMenu;
     try {
       await restoreFromTrash(target.uri);
-      setTrashFiles((prev) => prev.filter((f) => f.uri !== target.uri && f.id !== target.id));
+      setTrashFiles(prev =>
+        prev.filter(f => f.uri !== target.uri && f.id !== target.id),
+      );
       Alert.alert('Restored', `"${target.name}" has been restored.`);
     } catch (err: any) {
       Alert.alert('Restore Failed', err?.message || 'Could not restore file');
@@ -112,13 +121,18 @@ const TrashScreen = () => {
           onPress: async () => {
             try {
               await deletePermanently(target.uri);
-              setTrashFiles((prev) => prev.filter((f) => f.uri !== target.uri && f.id !== target.id));
+              setTrashFiles(prev =>
+                prev.filter(f => f.uri !== target.uri && f.id !== target.id),
+              );
             } catch (err: any) {
-              Alert.alert('Delete Failed', err?.message || 'Could not delete file');
+              Alert.alert(
+                'Delete Failed',
+                err?.message || 'Could not delete file',
+              );
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -129,7 +143,7 @@ const TrashScreen = () => {
       time={formatTime(item.trashedAt || item.modifiedDate)}
       daysRemainingText={formatDaysRemaining(item.trashedAt)}
       icon={getIconForExtension(item.extension)}
-      onMorePress={(pos) => handleMorePress(item, pos)}
+      onMorePress={pos => handleMorePress(item, pos)}
     />
   );
 
@@ -144,7 +158,8 @@ const TrashScreen = () => {
         />
         <Text style={styles.emptyTitle}>Trash is Empty</Text>
         <Text style={styles.emptySubtitle}>
-          Files moved to Trash will appear here for 30 days before being permanently deleted.
+          Files moved to Trash will appear here for 30 days before being
+          permanently deleted.
         </Text>
       </View>
     );
@@ -152,10 +167,22 @@ const TrashScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background as any} />
+      <StatusBar
+        barStyle={
+          mode === 'dark' ||
+          (mode === 'system' && colors.background === '#141414')
+            ? 'light-content'
+            : 'dark-content'
+        }
+      />
 
       {/* Header */}
-      <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, 14) }]}>
+      <View
+        style={[
+          styles.headerContainer,
+          { paddingTop: Math.max(insets.top, 14) },
+        ]}
+      >
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
@@ -177,7 +204,8 @@ const TrashScreen = () => {
       {/* Subtitle Notice */}
       <View style={styles.noticeContainer}>
         <Text style={styles.noticeText}>
-          After <Text style={styles.noticeHighlight}>30 Days files</Text> will be automatically deleted
+          After <Text style={styles.noticeHighlight}>30 Days files</Text> will
+          be automatically deleted
         </Text>
       </View>
 
@@ -190,10 +218,12 @@ const TrashScreen = () => {
       ) : (
         <FlatList
           data={trashFiles}
-          keyExtractor={(item) => item.uri || item.id}
+          keyExtractor={item => item.uri || item.id}
           renderItem={renderItem}
           contentContainerStyle={
-            trashFiles.length === 0 ? styles.emptyListContent : styles.listContent
+            trashFiles.length === 0
+              ? styles.emptyListContent
+              : styles.listContent
           }
           ListEmptyComponent={renderEmpty}
           refreshControl={
@@ -220,103 +250,104 @@ const TrashScreen = () => {
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    backgroundColor: colors.background,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  backIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
-    tintColor: colors.icon,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-  },
-  headerPlaceholder: {
-    width: 36,
-  },
-  noticeContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    paddingTop: 4,
-  },
-  noticeText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  noticeHighlight: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 24,
-  },
-  emptyListContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyImage: {
-    width: 120,
-    height: 120,
-    marginBottom: 16,
-    opacity: 0.6,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    headerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingBottom: 12,
+      backgroundColor: colors.background,
+    },
+    backButton: {
+      width: 36,
+      height: 36,
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+    },
+    backIcon: {
+      width: 22,
+      height: 22,
+      resizeMode: 'contain',
+      tintColor: colors.icon,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    headerPlaceholder: {
+      width: 36,
+    },
+    noticeContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+      paddingBottom: 16,
+      paddingTop: 4,
+    },
+    noticeText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      fontWeight: '500',
+    },
+    noticeHighlight: {
+      color: colors.primary,
+      fontWeight: '700',
+    },
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    listContent: {
+      paddingHorizontal: 16,
+      paddingTop: 4,
+      paddingBottom: 24,
+    },
+    emptyListContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 30,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+    },
+    emptyImage: {
+      width: 120,
+      height: 120,
+      marginBottom: 16,
+      opacity: 0.6,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+  });
 
 export default TrashScreen;

@@ -89,7 +89,7 @@ const HomeScreen = () => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background as any} />
+        <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
         <ToolsContainer onRequirePermission={requirePermission} />
         <RecentDocuments onRequirePermission={requirePermission} />
       </ScrollView>

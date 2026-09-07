@@ -51,9 +51,8 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
   const [recentFiles, setRecentFiles] = useState<ScannedFile[]>([]);
   const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  const { colors } = useTheme();
-  const styles = React.useMemo(() => getStyles(colors), [colors]);
+  const { colors, mode } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, mode), [colors, mode]);
 
   // 3-dots Menu & Rename state
   const [selectedFileForMenu, setSelectedFileForMenu] = useState<ScannedFile | null>(null);

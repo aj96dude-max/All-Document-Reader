@@ -249,7 +249,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
 
       {/* Top Header Component */}
       <DocumentHeader

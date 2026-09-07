@@ -6,7 +6,6 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
-  Image,
   RefreshControl,
   StatusBar,
   AppState,
@@ -56,7 +55,7 @@ const FavoriteScreen = () => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const { colors, mode } = useTheme();
-  const styles = React.useMemo(() => getStyles(colors), [colors]);
+  const styles = React.useMemo(() => getStyles(colors, mode), [colors, mode]);
 
   // Permission state
   const [isPermissionModalVisible, setIsPermissionModalVisible] = useState<boolean>(false);
@@ -257,7 +256,7 @@ const FavoriteScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
 
       {loading && favorites.length === 0 ? (
         <View style={styles.center}>

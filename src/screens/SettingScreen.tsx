@@ -39,7 +39,8 @@ const SettingScreen = () => {
   const { colors, mode, setMode } = useTheme();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
 
-  const isDarkMode = mode === 'dark' || (mode === 'system' && colors.background === '#141414');
+  const isDarkMode =
+    mode === 'dark' || (mode === 'system' && colors.background === '#141414');
 
   // Load saved settings
   const loadSettings = useCallback(async () => {
@@ -58,7 +59,7 @@ const SettingScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadSettings();
-    }, [loadSettings])
+    }, [loadSettings]),
   );
 
   const handleToggleKeepScreenOn = async (val: boolean) => {
@@ -76,7 +77,14 @@ const SettingScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background as any} />
+      <StatusBar
+        barStyle={
+          mode === 'dark' ||
+          (mode === 'system' && colors.background === '#141414')
+            ? 'light-content'
+            : 'dark-content'
+        }
+      />
       <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.contentContainer}
@@ -87,7 +95,7 @@ const SettingScreen = () => {
           title="App Theme"
           type="switch"
           value={isDarkMode}
-          onValueChange={(val) => setMode(val ? 'dark' : 'light')}
+          onValueChange={val => setMode(val ? 'dark' : 'light')}
         />
 
         <SettingItem
@@ -130,19 +138,20 @@ const SettingScreen = () => {
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContainer: {
+      flex: 1,
+    },
+    contentContainer: {
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 32,
+    },
+  });
 
 export default SettingScreen;

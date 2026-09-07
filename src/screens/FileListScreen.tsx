@@ -195,7 +195,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} backgroundColor={colors.background as any} />
+      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
       <FileListHeader title={fileType} onBack={() => navigation.goBack()} />
       {loading ? (
         <Loading message="Scanning device…" />

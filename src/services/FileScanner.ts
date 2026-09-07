@@ -4,11 +4,45 @@ import type { ScannedFile } from '../types/types';
 const { FileScannerModule } = NativeModules;
 
 /**
+ * Check whether storage permission is already granted.
+ * - Android 11+ (API 30+): MANAGE_EXTERNAL_STORAGE
+ * - Android 10 and below:  READ_EXTERNAL_STORAGE
+ */
+export async function checkStoragePermission(): Promise<boolean> {
+  if (Platform.OS !== 'android') {
+    return true;
+  }
+
+  if (Platform.Version >= 30) {
+    try {
+      return await FileScannerModule.isAllFilesAccessGranted();
+    } catch {
+      return false;
+    }
+  }
+
+  if (Platform.Version <= 29) {
+    try {
+      return await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Request the appropriate storage permission based on Android version:
  * - Android 11+ (API 30+): MANAGE_EXTERNAL_STORAGE (all-files access)
  * - Android 10 and below:  READ_EXTERNAL_STORAGE
+ *
+ * @param showExplanationAlert If false (e.g. when called from a custom UI modal),
+ *                             directly launches the settings screen without the default Alert.
  */
-export async function requestStoragePermission(): Promise<boolean> {
+export async function requestStoragePermission(showExplanationAlert: boolean = true): Promise<boolean> {
   if (Platform.OS !== 'android') {
     return false;
   }
@@ -18,6 +52,11 @@ export async function requestStoragePermission(): Promise<boolean> {
     try {
       const isGranted: boolean = await FileScannerModule.isAllFilesAccessGranted();
       if (isGranted) {
+        return true;
+      }
+
+      if (!showExplanationAlert) {
+        await FileScannerModule.requestAllFilesAccess();
         return true;
       }
 
@@ -38,9 +77,6 @@ export async function requestStoragePermission(): Promise<boolean> {
               onPress: async () => {
                 try {
                   await FileScannerModule.requestAllFilesAccess();
-                  // The user has been taken to Settings. We can't know the result
-                  // right away, but the next scan attempt will re-check.
-                  // For now, re-check after a short delay to give user time to toggle.
                   resolve(true);
                 } catch {
                   resolve(false);

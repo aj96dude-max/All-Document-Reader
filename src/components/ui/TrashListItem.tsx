@@ -1,0 +1,150 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  StyleSheet,
+  ImageSourcePropType,
+} from 'react-native';
+
+export type TrashListItemProps = {
+  name: string;
+  date: string;
+  time?: string;
+  daysRemainingText: string;
+  icon: React.FC<import('react-native-svg').SvgProps>;
+  iconBgColor?: string;
+  onPress?: () => void;
+  onMorePress?: (position: { pageX: number; pageY: number }) => void;
+};
+
+const TrashListItem: React.FC<TrashListItemProps> = ({
+  name,
+  date,
+  time,
+  daysRemainingText,
+  icon: Icon,
+  iconBgColor,
+  onPress,
+  onMorePress,
+}) => {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.container,
+        pressed && styles.containerPressed,
+      ]}
+      onPress={onPress}
+    >
+      {/* Icon Circle */}
+      <View style={[styles.iconContainer, iconBgColor ? { backgroundColor: iconBgColor } : null]}>
+        <Icon width="100%" height="100%" style={styles.icon as any} />
+      </View>
+
+      {/* Details: Name & Date/Days Left */}
+      <View style={styles.details}>
+        <Text style={styles.name} numberOfLines={1} ellipsizeMode="middle">
+          {name}
+        </Text>
+
+        <View style={styles.subInfoRow}>
+          <Text style={styles.dateText} numberOfLines={1}>
+            {date}{time ? `, ${time}` : ''}
+          </Text>
+          <Text style={styles.daysBadgeText}>
+            {daysRemainingText}
+          </Text>
+        </View>
+      </View>
+
+      {/* 3-Dots More Menu Trigger */}
+      <Pressable
+        style={styles.moreButton}
+        onPress={(e) => {
+          e.stopPropagation?.();
+          const { pageX, pageY } = e.nativeEvent;
+          onMorePress?.({ pageX, pageY });
+        }}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      >
+        <Text style={styles.more}>⋮</Text>
+      </Pressable>
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    height: 72,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    marginVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  containerPressed: {
+    opacity: 0.9,
+    backgroundColor: '#FAFAFA',
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  icon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    resizeMode: 'cover',
+  },
+  details: {
+    flex: 1,
+    marginLeft: 14,
+    marginRight: 8,
+    justifyContent: 'center',
+  },
+  name: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  subInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  dateText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginRight: 8,
+  },
+  daysBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ED1C24',
+  },
+  moreButton: {
+    width: 36,
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  more: {
+    fontSize: 22,
+    color: '#9CA3AF',
+    fontWeight: '700',
+    lineHeight: 24,
+  },
+});
+
+export default TrashListItem;

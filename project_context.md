@@ -1,6 +1,6 @@
 # AllDocumentReader — Project Context
 
-> **Last Updated:** 2026-09-04  
+> **Last Updated:** 2026-09-08  
 > **Version:** 0.0.1  
 > **Platform:** Android (React Native)
 
@@ -8,20 +8,22 @@
 
 ## 1. Overview
 
-**AllDocumentReader** is a React Native mobile application that lets users scan, browse, view, and manage documents stored on their Android device. It supports PDF, Word, Excel, PowerPoint, TXT, EPUB, and RTF file formats. The app provides native-level file scanning via a custom Kotlin bridge module (`FileScannerModule`), a built-in PDF viewer, a text file viewer, favorites, recent documents, trash (30-day auto-delete), and user settings.
+**AllDocumentReader** is a React Native mobile application that lets users scan, browse, view, and manage documents stored on their Android device. It supports PDF, Word, Excel, PowerPoint, TXT, EPUB, RTF, and 30+ additional file formats via offline document-to-PDF conversion. The app provides native-level file scanning via a custom Kotlin bridge module (`FileScannerModule`), a built-in PDF viewer, a text file viewer, favorites, recent documents, trash (30-day auto-delete), dark mode theming, and user settings.
 
 ---
 
 ## 2. Tech Stack
 
 | Layer              | Technology                                                                 |
-|--------------------|---------------------------------------------------------------------------|
+|--------------------|---------------------------------------------------------------------------| 
 | **Framework**      | React Native `0.87.1` (New Architecture)                                  |
-| **Language**       | TypeScript `6.x`, Kotlin (native Android module)                          |
+| **Language**       | TypeScript `6.x`, Kotlin (native Android modules)                         |
 | **React**          | React `19.2.3`                                                            |
 | **Navigation**     | `@react-navigation/native` `7.x`, `native-stack` `7.x`, `bottom-tabs` `7.x` |
 | **PDF Viewer**     | `react-native-pdf` `7.x`                                                 |
 | **File I/O**       | `react-native-blob-util` `0.24.x` (persistent JSON storage, file reads)  |
+| **SVG Icons**      | `react-native-svg` `15.x` + `react-native-svg-transformer` `1.x`         |
+| **Animations**     | `lottie-react-native` `7.x` (loading, conversion, empty state)           |
 | **Safe Area**      | `react-native-safe-area-context` `5.x`                                   |
 | **Screen Mgmt**    | `react-native-screens` `4.x`                                             |
 | **JS Engine**      | Hermes (default)                                                          |
@@ -39,21 +41,26 @@ AllDocumentReader/
 ├── app.json                        # App name: "AllDocumentReader"
 ├── package.json                    # Dependencies & scripts
 ├── tsconfig.json                   # Extends @react-native/typescript-config
-├── metro.config.js                 # Default Metro config
+├── metro.config.js                 # Metro config with react-native-svg-transformer
 ├── babel.config.js                 # Babel config
 ├── jest.config.js                  # Jest config
 ├── .eslintrc.js                    # ESLint config
 ├── .prettierrc.js                  # Prettier config
 │
 ├── src/                            # ★ Main application source code
-│   ├── App.tsx                     # Root component — navigation setup
+│   ├── App.tsx                     # Root component — ThemeProvider + SafeAreaProvider + AppNavigator
+│   ├── declarations.d.ts          # SVG module type declarations for react-native-svg-transformer
+│   │
+│   ├── navigation/                 # ★ Navigation layer (extracted from App.tsx)
+│   │   └── AppNavigator.tsx       # Stack + Tab navigators, SideMenu overlay, SVG tab icons
+│   │
 │   ├── screens/                    # Screen components
-│   │   ├── SplashScreen.tsx        # Animated splash with auto-nav (2.5s)
-│   │   ├── HomeScreen.tsx          # Home tab — tools grid + recent docs
+│   │   ├── SplashScreen.tsx        # Animated splash with auto-nav
+│   │   ├── HomeScreen.tsx          # Home tab — tools grid + recent docs + permission modal
 │   │   ├── FileListScreen.tsx      # File listing by type — scan, search, actions
-│   │   ├── DocumentViewerScreen.tsx# PDF/TXT viewer with toolbar actions
+│   │   ├── DocumentViewerScreen.tsx# PDF/TXT/converted viewer with toolbar actions
 │   │   ├── FavoriteScreen.tsx      # Favorited files list
-│   │   ├── SettingScreen.tsx       # App settings
+│   │   ├── SettingScreen.tsx       # App theme, keep screen on, trash, privacy, share, rate
 │   │   ├── TrashScreen.tsx         # Trashed files (30-day auto-delete)
 │   │   └── AllFiles.tsx            # (minimal — placeholder/stub)
 │   │
@@ -72,6 +79,8 @@ AllDocumentReader/
 │   │   ├── ui/                     # Shared UI components (lists, modals)
 │   │   │   ├── FileListItem.tsx    # Single file row in file lists
 │   │   │   ├── FileActionMenuModal.tsx  # Long-press 3-dot action menu
+│   │   │   ├── DeleteConfirmationModal.tsx  # ★ Animated delete confirmation dialog
+│   │   │   ├── FilePermissionModal.tsx # ★ Custom file-access permission prompt (allow/skip)
 │   │   │   ├── TrashListItem.tsx   # Trash file row with days remaining
 │   │   │   └── TrashActionMenuModal.tsx # Trash action menu (restore/delete)
 │   │   │
@@ -87,17 +96,21 @@ AllDocumentReader/
 │   │   │   └── SettingItem.tsx     # Individual setting row (switch/link)
 │   │   │
 │   │   └── common/                 # Common shared components
-│   │       ├── Loading.tsx         # Full-screen loading spinner
+│   │       ├── Loading.tsx         # Full-screen loading spinner (Lottie-based)
 │   │       └── index.ts           # Barrel export
 │   │
 │   ├── services/                   # Business logic & data persistence
-│   │   ├── FileScanner.ts         # Native module bridge — scan, delete, rename, share, keepScreenOn
+│   │   ├── FileScanner.ts         # Native module bridge — scan, delete, rename, share, keepScreenOn, permissions
 │   │   ├── DocConverterService.ts # W2P converter bridge — document-to-PDF conversion + caching
 │   │   ├── FavoritesService.ts    # Favorites CRUD (favorites.json)
 │   │   ├── RecentDocumentsService.ts # Recent docs CRUD (recent_documents.json, max 50)
 │   │   ├── TrashService.ts        # Trash CRUD with 30-day auto-delete (trash.json)
-│   │   ├── SettingsService.ts     # Settings persistence + utility actions (share, rate, privacy)
-│   │   └── fileHelpers.ts         # Formatting utils (bytes, dates, icons, colors)
+│   │   ├── SettingsService.ts     # Settings persistence (keepScreenOn, theme) + utility actions (share, rate, privacy)
+│   │   └── fileHelpers.ts         # Formatting utils (bytes, dates, SVG icon components, file type colors)
+│   │
+│   ├── theme/                      # ★ Theming system (dark mode support)
+│   │   ├── ThemeContext.tsx        # React Context provider — ThemeMode (light/dark/system), ColorPalette
+│   │   └── colors.ts              # ColorPalette interface, lightColors, darkColors definitions
 │   │
 │   ├── types/                      # TypeScript type definitions
 │   │   └── types.ts               # ScannedFile, RootStackParamList
@@ -105,14 +118,31 @@ AllDocumentReader/
 │   └── utils/                      # Utility functions
 │       └── fileScanner.ts         # JS-based file scanner (legacy — uses react-native-fs, not actively used)
 │
-├── Assets/                         # Static image assets
-│   ├── app_icon.png               # App icon
-│   ├── loading.gif                # Loading animation
-│   ├── clear_all.png              # Clear all icon
-│   ├── home/                      # Home screen tool icons (pdf, word, excel, ppt, txt, epub, rtf, allfiles)
-│   ├── icons/                     # Action icons (search, share, delete, favorite, etc.)
-│   ├── tabs/                      # Bottom tab bar icons (home, favorite, settings — active/inactive)
-│   └── splash/                    # Splash screen vector graphic
+├── Assets/                         # Static assets
+│   ├── svgicons/                  # ★ SVG icon library (58 icons)
+│   │                              #   Tab icons: home, home_active, favorite, favorite_active, settings, settings_active
+│   │                              #   File type icons: pdf_circle, word_circle, xlsx_circle, pptx_circle, txtx, epub, rtf, All
+│   │                              #   Action icons: search, share, delete_file, delete_forever, border_color, close, cancel
+│   │                              #   Theme icons: light, dark
+│   │                              #   Viewer icons: chevron_backward, arrow_drop_down, black_favorite, un_favorite, etc.
+│   │                              #   Settings icons: wb_incandescent, security, family_star, storage
+│   │                              #   UI: folder (permission modal), Empty Folder, App Icon
+│   │
+│   ├── anim/                      # ★ Lottie JSON animation files
+│   │   ├── loading-animation.json         # General loading spinner
+│   │   ├── Converting PDF Jason.json      # PDF conversion progress
+│   │   ├── After converting done lootie.json  # Conversion complete
+│   │   └── Empety Documents Jason File.json   # Empty document state
+│   │
+│   └── splash/                    # Splash screen assets
+│       └── vector_12.png         # Splash vector graphic
+│
+├── design/                         # ★ UI design mockup screenshots (35 images)
+│                                   # Reference screens: Main Screen (9 variants), Dark Mode, Splash,
+│                                   # Settings, Favorites, Trash, Document Viewer, Search, Popup,
+│                                   # Side Menu, File Access Permission, Delete Model,
+│                                   # Convert to PDF, Jump To Page, Onboarding (3 screens),
+│                                   # Showing All Files, Empty File, App Icon
 │
 ├── android/                        # Android native project
 │   └── app/src/main/java/com/alldocumentreader/
@@ -130,10 +160,6 @@ AllDocumentReader/
 │   │   ├── presentation/              # Presentation layer
 │   │   └── README.md                  # Detailed docs on supported formats
 │
-├── ui/                             # UI design mockup screenshots (30 images)
-│                                   # Reference screens: Main Screen, Splash, Settings, Favorites,
-│                                   # Trash, Document Viewer, Search, Popup, Side Menu, etc.
-│
 ├── error/                          # Design reference images (list design, list_item)
 │
 ├── __tests__/                      # Jest test directory
@@ -145,20 +171,26 @@ AllDocumentReader/
 
 ## 4. Navigation Architecture
 
+Navigation is defined in `src/navigation/AppNavigator.tsx` (extracted from `App.tsx`).
+
 ```
 NavigationContainer
 └── Stack.Navigator (RootStackParamList)
-    ├── "Splash"    → SplashScreen         (auto-navigates to MainTabs after 2.5s)
+    ├── "Splash"    → SplashScreen         (auto-navigates to MainTabs)
     ├── "MainTabs"  → Tab.Navigator
-    │   ├── "Home"     → HomeScreen        (tools grid + recent documents)
+    │   ├── "Home"     → HomeScreen        (tools grid + recent docs + permission flow)
     │   ├── "Favorite" → FavoriteScreen    (favorited files)
-    │   └── "Setting"  → SettingScreen     (keep screen on, trash, privacy, share, rate)
+    │   └── "Setting"  → SettingScreen     (theme, keep screen on, trash, privacy, share, rate)
     ├── "FileList"  → FileListScreen       (params: { fileType: string })
     ├── "FileViewer"→ DocumentViewerScreen (params: { file: ScannedFile })
     └── "Trash"     → TrashScreen          (trashed files with auto-delete countdown)
 ```
 
-**Side Menu** is rendered as an overlay `<Modal>` inside `<NavigationContainer>`, controlled via `isSideMenuVisible` state in `App.tsx`. It provides: Privacy Policy, Share with Friends, and Rate Us actions.
+**Tab Bar Icons:** SVG icons imported from `Assets/svgicons/` — each tab has active/inactive SVG variants (e.g., `home.svg` / `home_active.svg`). Tab bar colors are driven by the theme (`colors.primary` / `colors.iconInactive`).
+
+**Side Menu** is rendered as an overlay `<Modal>` inside `<NavigationContainer>`, controlled via `isSideMenuVisible` state in `AppNavigator.tsx`. It provides: Privacy Policy, Share with Friends, and Rate Us actions.
+
+**App.tsx** is a thin root that composes `<ThemeProvider>` → `<SafeAreaProvider>` → `<AppNavigator />` and calls `initSettings()` on mount.
 
 ---
 
@@ -192,7 +224,8 @@ type RootStackParamList = {
 
 ### 6.1 FileScanner (`services/FileScanner.ts`)
 The primary bridge to the native `FileScannerModule` (Kotlin). Exposes:
-- **`requestStoragePermission()`** — Handles Android 11+ (`MANAGE_EXTERNAL_STORAGE`), Android 10- (`READ/WRITE_EXTERNAL_STORAGE`)
+- **`checkStoragePermission()`** — Checks if storage permission is already granted (Android 11+ vs ≤29)
+- **`requestStoragePermission(showExplanationAlert?)`** — Handles Android 11+ (`MANAGE_EXTERNAL_STORAGE`), Android ≤29 (`READ/WRITE_EXTERNAL_STORAGE`), Android 30-32 (`READ_EXTERNAL_STORAGE`). Supports silent mode (no alert) for custom UI modal flow.
 - **`scanFiles(fileType)`** — Scans device via native MediaStore, filters out trashed files
 - **`deleteFile(uri)`** — Permanently deletes a file on disk
 - **`renameFile(uri, newName)`** — Renames file and returns updated `ScannedFile`
@@ -216,26 +249,28 @@ JSON file-based trash at `DocumentDir/trash.json` with **30-day auto-delete**:
 
 ### 6.5 SettingsService (`services/SettingsService.ts`)
 JSON file-based settings at `DocumentDir/app_settings.json`:
-- **Settings:** `keepScreenOn` (boolean, default: `true`)
+- **Settings:** `keepScreenOn` (boolean, default: `true`), `theme` (`ThemeMode`, default: `'system'`)
 - **Utility actions:** `openPrivacyPolicy()`, `shareApp()`, `rateApp()`
-- **Init:** `initSettings()` — Called on app start, applies saved settings
+- **Init:** `initSettings()` — Called on app start, applies saved `keepScreenOn` setting
+- **Native helpers:** `applyKeepScreenOn()`, `isNativeKeepScreenOn()`
 
 ### 6.6 DocConverterService (`services/DocConverterService.ts`)
 TypeScript bridge to the native `DocConverterModule` (W2P library). Provides:
 - **`isConvertibleExtension(ext)`** — Check if a file extension can be converted to PDF
 - **`convertToPdf(inputUri, fileName)`** — Convert a document to PDF, with file-based caching
 - **`clearConversionCache()`** — Clear all cached converted PDFs
+- **`CONVERTIBLE_EXTENSIONS`** — Array of 40+ supported extensions (`.docx`, `.pptx`, `.xlsx`, `.epub`, `.rtf`, `.md`, `.csv`, images, source code, etc.)
 - Cache location: `CacheDir/converted_pdfs/` — uses URI-based hash keys to avoid re-conversion
 
 ### 6.7 fileHelpers (`services/fileHelpers.ts`)
 Pure utility functions:
 - `formatBytes()`, `formatDate()`, `formatTime()`
-- `getIconForExtension()`, `getBgColorForExtension()`
-- `UNSUPPORTED_VIEWER_EXTENSIONS` — `['ppt','pptx','doc','docx','xls','xlsx']` (opened externally)
+- `getIconForExtension()` — Returns SVG React component for file type (imports from `Assets/svgicons/`)
+- `getBgColorForExtension()` — Returns background color hex for file type
 
 ---
 
-## 7. Native Android Module
+## 7. Native Android Modules
 
 ### FileScannerModule.kt
 A custom Kotlin native module (`com.alldocumentreader.FileScannerModule`) registered via `FileScannerPackage.kt`. Key capabilities:
@@ -273,14 +308,14 @@ All app data is persisted as **JSON files** in the app's `DocumentDir` (via `rea
 | `favorites.json` | Array of `ScannedFile` objects marked as favorite |
 | `recent_documents.json` | Array of `ScannedFile` (max 50, most-recent-first) |
 | `trash.json` | Array of `TrashedFile` (extends `ScannedFile` + `trashedAt` epoch) |
-| `app_settings.json` | `AppSettings` object (`{ keepScreenOn: boolean }`) |
+| `app_settings.json` | `AppSettings` object (`{ keepScreenOn: boolean, theme: ThemeMode }`) |
 
 ---
 
 ## 9. Supported File Types
 
 | Category | Extensions | Viewing Support |
-|----------|-----------|-----------------|
+|----------|-----------|-----------------| 
 | PDF | `.pdf` | ✅ Built-in viewer (`react-native-pdf`) |
 | Plain Text | `.txt` | ✅ Built-in viewer (`TextDocumentViewer`) |
 | Word | `.docx` | ✅ Convert to PDF → built-in viewer (W2P) |
@@ -291,6 +326,12 @@ All app data is persisted as **JSON files** in the app's `DocumentDir` (via `rea
 | PowerPoint (legacy) | `.ppt` | ✅ Convert to PDF → built-in viewer (W2P) |
 | eBook | `.epub` | ✅ Convert to PDF → built-in viewer (W2P) |
 | Rich Text | `.rtf` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Markdown | `.md` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Spreadsheet | `.csv`, `.tsv` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Data | `.json`, `.xml` | ✅ Convert to PDF → built-in viewer (W2P) |
+| LaTeX | `.tex` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Images | `.jpg`, `.png`, `.webp`, `.gif`, `.bmp` | ✅ Convert to PDF → built-in viewer (W2P) |
+| Source Code | `.java`, `.kt`, `.py`, `.c`, `.cpp`, `.html`, `.js`, `.css`, `.yaml`, `.yml`, `.sh`, `.swift`, `.rb`, `.go`, `.rs`, `.php` | ✅ Convert to PDF → built-in viewer (W2P) |
 
 ---
 
@@ -306,16 +347,90 @@ The `android/W2P/` directory contains **OfflineDocConverter** — a standalone A
 
 ---
 
-## 11. UI Design System
+## 11. Theming System
 
-- **Color Palette:** Light theme — backgrounds `#F5F6F8` / `#F4F5F7` / `#F4F7FB`, text `#111827` / `#1F2937`, accent `#ED1C24` (tab active), muted `#6B7280` / `#A7A7A7`
-- **File Type Colors:** PDF `#FFE5E7`, Word `#DBEAFE`, Excel `#D1FAE5`, PPT `#FFEDD5`, TXT `#E2E8F0`, EPUB `#EDE9FE`, RTF `#FCE7F3`
-- **Animations:** Splash uses `Animated.timing` + `Animated.spring` for icon/text entrance; SideMenu uses `Animated.timing` for drawer slide + backdrop fade
-- **Styling:** All styles use `StyleSheet.create()` — no external styling libraries
+The app supports **light**, **dark**, and **system** (follows device setting) theme modes.
+
+### Architecture
+
+- **`src/theme/ThemeContext.tsx`** — React Context provider (`ThemeProvider`) that exposes `mode`, `isDark`, `colors`, and `setMode()`. Loads persisted theme from `app_settings.json` on mount.
+- **`src/theme/colors.ts`** — Defines the `ColorPalette` interface and exports `lightColors` and `darkColors` objects.
+- **`src/App.tsx`** — Wraps the entire app in `<ThemeProvider>`.
+- **Components** — Access theme via the `useTheme()` hook; styles are generated dynamically using `getStyles(colors)` pattern with `React.useMemo()`.
+
+### ColorPalette Interface
+
+```typescript
+interface ColorPalette {
+  background: string;      // Screen background
+  surface: string;         // Card/content surfaces
+  surfaceElevated: string; // Elevated surfaces (tab bar, modals)
+  text: string;            // Primary text
+  textSecondary: string;   // Secondary/subtitle text
+  textTertiary: string;    // Muted/placeholder text
+  primary: string;         // Accent color (#ED1C24 red)
+  border: string;          // Border/divider lines
+  icon: string;            // Active icon color
+  iconInactive: string;    // Inactive icon color
+  red: string;             // Destructive/error color
+  overlay: string;         // Modal backdrop overlay
+}
+```
+
+### Color Values
+
+| Token | Light | Dark |
+|-------|-------|------|
+| `background` | `#F5F6F8` | `#141414` |
+| `surface` | `#FFFFFF` | `#1C1C1C` |
+| `surfaceElevated` | `#FFFFFF` | `#262626` |
+| `text` | `#1C1C1C` | `#F3F4F6` |
+| `textSecondary` | `#6B7280` | `#9CA3AF` |
+| `textTertiary` | `#A7A7A7` | `#6B7280` |
+| `primary` | `#ED1C24` | `#ED1C24` |
+| `border` | `#E5E7EB` | `#374151` |
+
+### File Type Background Colors (unchanged across themes)
+
+| Type | Color |
+|------|-------|
+| PDF | `#FFE5E7` |
+| Word | `#DBEAFE` |
+| Excel | `#D1FAE5` |
+| PPT | `#FFEDD5` |
+| TXT | `#E2E8F0` |
+| EPUB | `#EDE9FE` |
+| RTF | `#FCE7F3` |
 
 ---
 
-## 12. Scripts
+## 12. Icon & Asset System
+
+### SVG Icons (`Assets/svgicons/`)
+All UI icons are SVG files imported as React components via `react-native-svg-transformer`. The Metro config (`metro.config.js`) is configured to treat `.svg` files as source extensions. Type declarations are in `src/declarations.d.ts`.
+
+**Icon categories (58 files):**
+- **Tab bar:** `home.svg`, `home_active.svg`, `favorite.svg`, `favorite_active.svg`, `settings.svg`, `settings_active.svg`
+- **File types:** `pdf_circle.svg`, `word_circle.svg`, `xlsx_circle.svg`, `pptx_circle.svg`, `txtx.svg`, `epub.svg`, `rtf.svg`, `All.svg`
+- **Actions:** `search.svg`, `share.svg`, `delete_file.svg`, `delete_forever.svg`, `border_color.svg`, `close.svg`, `cancel.svg`, `restore_from_trash.svg`, `clear_all.svg`
+- **Theme:** `light.svg`, `dark.svg`
+- **Navigation/viewer:** `chevron_backward.svg`, `arrow_drop_down.svg`, `black_favorite.svg`, `un_favorite.svg`, `heart_minus.svg`, `picture_as_pdf.svg`, `black_picture_as_pdf.svg`
+- **Settings:** `wb_incandescent.svg`, `security.svg`, `family_star.svg`, `storage.svg`
+- **UI:** `folder.svg` (permission modal), `Empty Folder.svg` (empty state), `App Icon.svg`
+
+### Lottie Animations (`Assets/anim/`)
+4 Lottie JSON files for animated UI states:
+- `loading-animation.json` — General loading spinner
+- `Converting PDF Jason.json` — PDF conversion progress indicator
+- `After converting done lootie.json` — Conversion completion
+- `Empety Documents Jason File.json` — Empty document list state
+
+### Splash Assets (`Assets/splash/`)
+- `vector_12.png` — Splash screen vector graphic
+
+---
+
+## 13. Scripts
 
 ```bash
 npm start       # Start Metro dev server
@@ -327,16 +442,18 @@ npm test         # Run Jest tests
 
 ---
 
-## 13. Key Conventions
+## 14. Key Conventions
 
 1. **Component files** use PascalCase (e.g., `HomeScreen.tsx`, `SideMenu.tsx`)
 2. **Service files** use PascalCase or camelCase (e.g., `FileScanner.ts`, `fileHelpers.ts`)
-3. **All components** are functional components using hooks (`useState`, `useEffect`, `useCallback`, `useRef`)
-4. **Navigation** is fully typed via `RootStackParamList`
-5. **No state management library** — state is local to screens/components; services handle persistence
-6. **File operations** go through the native `FileScannerModule` bridge, not the JS-based `utils/fileScanner.ts` (which is legacy/unused)
-7. **Persistence** uses `react-native-blob-util` filesystem API to read/write JSON files
-8. **Assets** are static `require()` imports from the `Assets/` directory
+3. **All components** are functional components using hooks (`useState`, `useEffect`, `useCallback`, `useRef`, `useMemo`)
+4. **Navigation** is fully typed via `RootStackParamList` and defined in `src/navigation/AppNavigator.tsx`
+5. **Theming** uses React Context (`useTheme()` hook) with dynamic style generation via `getStyles(colors)` pattern
+6. **No state management library** — state is local to screens/components; services handle persistence; theme uses React Context
+7. **File operations** go through the native `FileScannerModule` bridge, not the JS-based `utils/fileScanner.ts` (which is legacy/unused)
+8. **Persistence** uses `react-native-blob-util` filesystem API to read/write JSON files
+9. **Icons** are SVG components imported from `Assets/svgicons/` (not PNG `require()` — migrated to SVG)
+10. **Animations** use Lottie JSON files (`lottie-react-native`) for loading/conversion states, and `Animated` API for transitions
 
 ---
 

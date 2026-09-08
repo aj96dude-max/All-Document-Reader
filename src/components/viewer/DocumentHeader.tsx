@@ -3,19 +3,24 @@ import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
 import ChevronBackwardIcon from '../../../Assets/svgicons/chevron_backward.svg';
 import ShareIcon from '../../../Assets/svgicons/share.svg';
+import PdfIcon from '../../../Assets/svgicons/picture_as_pdf.svg';
 import { useTheme } from '../../theme/ThemeContext';
 import { ColorPalette } from '../../theme/colors';
 
 interface DocumentHeaderProps {
   title: string;
+  isPdf?: boolean;
   onBack: () => void;
   onShare: () => void;
+  onConvert?: () => void;
 }
 
 const DocumentHeader: React.FC<DocumentHeaderProps> = ({
   title,
+  isPdf = true,
   onBack,
   onShare,
+  onConvert,
 }) => {
   const { colors } = useTheme();
   const styles = React.useMemo(() => getStyles(colors), [colors]);
@@ -39,18 +44,33 @@ const DocumentHeader: React.FC<DocumentHeaderProps> = ({
         {title}
       </Text>
 
-      <TouchableOpacity
-        style={styles.headerIconBtn}
-        onPress={onShare}
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        activeOpacity={0.7}
-      >
-        <ShareIcon
-          width={22}
-          height={22}
-          style={styles.headerShareIcon as any}
-        />
-      </TouchableOpacity>
+      {isPdf ? (
+        <TouchableOpacity
+          style={styles.headerIconBtn}
+          onPress={onShare}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.7}
+        >
+          <ShareIcon
+            width={22}
+            height={22}
+            style={styles.headerShareIcon as any}
+          />
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.headerIconBtn}
+          onPress={onConvert}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.7}
+        >
+          <PdfIcon
+            width={22}
+            height={22}
+            style={styles.headerShareIcon as any}
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

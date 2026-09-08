@@ -11,6 +11,7 @@ import SettingScreen from '../screens/SettingScreen';
 import FileListScreen from '../screens/FileListScreen';
 import DocumentViewerScreen from '../screens/DocumentViewerScreen';
 import TrashScreen from '../screens/TrashScreen';
+import ConvertedFilesScreen from '../screens/ConvertedFilesScreen';
 import SideMenu from '../components/SideMenu';
 import CustomHeader from '../components/CustomHeader';
 import { RootStackParamList } from '../types/types';
@@ -22,6 +23,8 @@ import FavoriteIcon from '../../Assets/svgicons/favorite.svg';
 import FavoriteActiveIcon from '../../Assets/svgicons/favorite_active.svg';
 import SettingsIcon from '../../Assets/svgicons/settings.svg';
 import SettingsActiveIcon from '../../Assets/svgicons/settings_active.svg';
+import StorageIcon from '../../Assets/svgicons/storage.svg';
+import StorageActiveIcon from '../../Assets/svgicons/storage_active.svg';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -84,6 +87,25 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
               <FavoriteActiveIcon width={size} height={size} color={color} />
             ) : (
               <FavoriteIcon width={size} height={size} color={color} />
+            )
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Converted"
+        component={ConvertedFilesScreen}
+        options={{
+          header: () => (
+            <CustomHeader
+              title="All Document Reader"
+              onMenuPress={onOpenSideMenu}
+            />
+          ),
+          tabBarIcon: ({ size, focused, color }) => (
+            focused ? (
+              <StorageActiveIcon width={size} height={size} color={color} />
+            ) : (
+              <StorageIcon width={size} height={size} color={color} />
             )
           ),
         }}

@@ -29,6 +29,7 @@ import {
   convertToPdf,
 } from '../services/DocConverterService';
 
+import ConvertToPdfModal from '../components/viewer/ConvertToPdfModal';
 import DocumentHeader from '../components/viewer/DocumentHeader';
 import DocumentBottomToolbar from '../components/viewer/DocumentBottomToolbar';
 import JumpToPageModal from '../components/viewer/JumpToPageModal';
@@ -37,6 +38,8 @@ import PageIndicator from '../components/viewer/PageIndicator';
 import TextDocumentViewer from '../components/viewer/TextDocumentViewer';
 import { useTheme } from '../theme/ThemeContext';
 import { ColorPalette } from '../theme/colors';
+import { addConvertedFile } from '../services/ConvertedFilesService';
+import { saveConvertedPdf } from '../services/DocConverterService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FileViewer'>;
 
@@ -66,6 +69,10 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const [isJumpModalVisible, setIsJumpModalVisible] = useState<boolean>(false);
   const [isRenameModalVisible, setIsRenameModalVisible] = useState<boolean>(false);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
+  
+  // Manual Conversion Modal states
+  const [isConvertModalVisible, setIsConvertModalVisible] = useState<boolean>(false);
+  const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>('converting');
 
   // Text file states
   const ext = (currentFile.extension || '').toLowerCase();
@@ -251,6 +258,40 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
+  // Convert to PDF manually
+  const handleConvertToPdf = async () => {
+    setIsConvertModalVisible(true);
+    setConvertStatus('converting');
+    try {
+      const startTime = Date.now();
+      const permanentPath = await saveConvertedPdf(currentFile.uri, currentFile.name);
+      
+      const newName = currentFile.name.replace(/\.[^/.]+$/, '') + '.pdf';
+      const convertedFile: ScannedFile = {
+        ...currentFile,
+        id: permanentPath,
+        uri: `file://${permanentPath}`,
+        name: newName,
+        extension: 'pdf',
+        mimeType: 'application/pdf',
+      };
+      
+      await addConvertedFile(convertedFile);
+      
+      const elapsedTime = Date.now() - startTime;
+      const MIN_ANIMATION_DELAY = 2000; // minimum 2s delay
+      if (elapsedTime < MIN_ANIMATION_DELAY) {
+        await new Promise<void>(resolve => setTimeout(resolve, MIN_ANIMATION_DELAY - elapsedTime));
+      }
+      
+      setConvertStatus('success');
+    } catch (error: any) {
+      setIsConvertModalVisible(false);
+      Alert.alert('Conversion Failed', error?.message || 'Could not save converted PDF');
+    }
+  };
+
+
   return (
     <View style={[styles.container, { paddingTop: isOverlayVisible ? insets.top : 0 }]}>
       <StatusBar hidden={!isOverlayVisible} barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
@@ -260,8 +301,10 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.headerWrapper}>
           <DocumentHeader
             title={fileName}
+            isPdf={isPdf}
             onBack={() => navigation.goBack()}
             onShare={handleShare}
+            onConvert={handleConvertToPdf}
           />
         </View>
       )}
@@ -397,6 +440,13 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
         isRenaming={isRenaming}
         onClose={() => setIsRenameModalVisible(false)}
         onSave={handleRenameSubmit}
+      />
+
+      {/* Convert To PDF Modal Component */}
+      <ConvertToPdfModal
+        visible={isConvertModalVisible}
+        status={convertStatus}
+        onClose={() => setIsConvertModalVisible(false)}
       />
     </View>
   );

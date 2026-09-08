@@ -15,6 +15,7 @@ import EmptyDocState from './EmptyDocState';
 import FileListItem from '../ui/FileListItem';
 import FileActionMenuModal from '../ui/FileActionMenuModal';
 import RenameModal from '../viewer/RenameModal';
+import ConvertToPdfModal from '../viewer/ConvertToPdfModal';
 import {
   getRecentDocuments,
   addRecentDocument,
@@ -33,6 +34,8 @@ import {
   formatTime,
   getIconForExtension,
 } from '../../services/fileHelpers';
+import { saveConvertedPdf } from '../../services/DocConverterService';
+import { addConvertedFile } from '../../services/ConvertedFilesService';
 
 import SearchIcon from '../../../Assets/svgicons/search.svg';
 import CloseIcon from '../../../Assets/svgicons/close.svg';
@@ -61,6 +64,10 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
   const [isMenuVisible, setIsMenuVisible] = useState<boolean>(false);
   const [isRenameVisible, setIsRenameVisible] = useState<boolean>(false);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
+
+  // Manual Conversion state
+  const [isConvertModalVisible, setIsConvertModalVisible] = useState<boolean>(false);
+  const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>('converting');
 
   const loadRecents = useCallback(async () => {
     try {
@@ -179,6 +186,40 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
     }
   };
 
+  const handleMenuConvert = async () => {
+    if (!selectedFileForMenu) return;
+    setIsConvertModalVisible(true);
+    setConvertStatus('converting');
+    try {
+      const startTime = Date.now();
+      const targetFile = selectedFileForMenu;
+      const permanentPath = await saveConvertedPdf(targetFile.uri, targetFile.name);
+      
+      const newName = targetFile.name.replace(/\.[^/.]+$/, '') + '.pdf';
+      const convertedFile: ScannedFile = {
+        ...targetFile,
+        id: permanentPath,
+        uri: `file://${permanentPath}`,
+        name: newName,
+        extension: 'pdf',
+        mimeType: 'application/pdf',
+      };
+      
+      await addConvertedFile(convertedFile);
+      
+      const elapsedTime = Date.now() - startTime;
+      const MIN_ANIMATION_DELAY = 2000; 
+      if (elapsedTime < MIN_ANIMATION_DELAY) {
+        await new Promise<void>(resolve => setTimeout(resolve, MIN_ANIMATION_DELAY - elapsedTime));
+      }
+      
+      setConvertStatus('success');
+    } catch (error: any) {
+      setIsConvertModalVisible(false);
+      Alert.alert('Conversion Failed', error?.message || 'Could not save converted PDF');
+    }
+  };
+
   const filteredFiles = searchQuery.trim()
     ? recentFiles.filter((f) =>
         f.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
@@ -270,11 +311,13 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
         visible={isMenuVisible}
         anchorPosition={menuAnchorPosition}
         isFavorite={selectedFileIsFavorite}
+        isPdf={selectedFileForMenu?.extension.toLowerCase() === 'pdf'}
         onClose={() => setIsMenuVisible(false)}
         onToggleFavorite={handleToggleFavorite}
         onRename={() => setIsRenameVisible(true)}
         onDelete={handleMenuDelete}
         onShare={handleMenuShare}
+        onConvert={handleMenuConvert}
       />
 
       {/* Rename Modal */}
@@ -288,6 +331,13 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
         isRenaming={isRenaming}
         onClose={() => setIsRenameVisible(false)}
         onSave={handleRenameSave}
+      />
+
+      {/* Convert To PDF Modal */}
+      <ConvertToPdfModal
+        visible={isConvertModalVisible}
+        status={convertStatus}
+        onClose={() => setIsConvertModalVisible(false)}
       />
     </View>
   );

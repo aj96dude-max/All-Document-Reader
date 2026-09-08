@@ -18,6 +18,7 @@ import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
 import BorderColorIcon from '../../../Assets/svgicons/border_color.svg';
 import DeleteForeverIcon from '../../../Assets/svgicons/delete_forever.svg';
 import ShareIcon from '../../../Assets/svgicons/share.svg';
+import PdfIcon from '../../../Assets/svgicons/picture_as_pdf.svg';
 import { useTheme } from '../../theme/ThemeContext';
 import { ColorPalette } from '../../theme/colors';
 
@@ -25,25 +26,29 @@ interface FileActionMenuModalProps {
   visible: boolean;
   anchorPosition?: { top: number; right?: number } | null;
   isFavorite?: boolean;
+  isPdf?: boolean;
   onClose: () => void;
   onToggleFavorite: () => void;
   onRename: () => void;
   onDelete: () => void;
   onShare: () => void;
+  onConvert?: () => void;
 }
 
-const MENU_HEIGHT = 210;
+const MENU_HEIGHT = 260;
 const MENU_WIDTH = 210;
 
 const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
   visible,
   anchorPosition,
   isFavorite = false,
+  isPdf = true,
   onClose,
   onToggleFavorite,
   onRename,
   onDelete,
   onShare,
+  onConvert,
 }) => {
   const { colors, mode } = useTheme();
   const styles = React.useMemo(() => getStyles(colors, mode), [colors, mode]);
@@ -155,6 +160,22 @@ const FileActionMenuModal: React.FC<FileActionMenuModalProps> = ({
               <Animated.View
                 style={[styles.menuCard, cardStyle, animatedStyle]}
               >
+                {/* 0. Convert to PDF */}
+                {!isPdf && onConvert && (
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => handleDismiss(onConvert)}
+                    activeOpacity={0.7}
+                  >
+                    <PdfIcon
+                      width={22}
+                      height={22}
+                      style={styles.menuIcon as any}
+                    />
+                    <Text style={styles.menuText}>Convert to PDF</Text>
+                  </TouchableOpacity>
+                )}
+
                 {/* 1. Favorite / Unfavorite */}
                 <TouchableOpacity
                   style={styles.menuItem}

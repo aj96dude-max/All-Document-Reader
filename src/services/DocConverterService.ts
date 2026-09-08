@@ -22,6 +22,12 @@ export const CONVERTIBLE_EXTENSIONS = [
 const CACHE_DIR = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/converted_pdfs`;
 
 /**
+ * Directory where permanently saved converted PDFs are stored.
+ */
+const PERMANENT_DIR = `${ReactNativeBlobUtil.fs.dirs.DocumentDir}/ConvertedFiles`;
+
+
+/**
  * Check if a file extension needs conversion (i.e., is not natively viewable as PDF/TXT).
  */
 export function isConvertibleExtension(extension: string): boolean {
@@ -114,4 +120,31 @@ export async function clearConversionCache(): Promise<void> {
   } catch (error) {
     console.error('Failed to clear conversion cache:', error);
   }
+}
+
+/**
+ * Save a converted PDF permanently.
+ * Converts the file (or uses cache) and copies it to the permanent directory.
+ * @returns the absolute file path of the permanently saved PDF.
+ */
+export async function saveConvertedPdf(
+  inputUri: string,
+  fileName: string,
+): Promise<string> {
+  const cachedPath = await convertToPdf(inputUri, fileName);
+  
+  const dirExists = await ReactNativeBlobUtil.fs.exists(PERMANENT_DIR);
+  if (!dirExists) {
+    await ReactNativeBlobUtil.fs.mkdir(PERMANENT_DIR);
+  }
+
+  const key = getCacheKey(inputUri, fileName);
+  const permanentPath = `${PERMANENT_DIR}/${key}.pdf`;
+  
+  const exists = await ReactNativeBlobUtil.fs.exists(permanentPath);
+  if (!exists) {
+    await ReactNativeBlobUtil.fs.cp(cachedPath, permanentPath);
+  }
+  
+  return permanentPath;
 }

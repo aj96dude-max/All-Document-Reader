@@ -17,7 +17,6 @@ import { RootStackParamList, ScannedFile } from '../types/types';
 import FileListItem from '../components/ui/FileListItem';
 import FileActionMenuModal from '../components/ui/FileActionMenuModal';
 import RenameModal from '../components/viewer/RenameModal';
-import ConvertToPdfModal from '../components/viewer/ConvertToPdfModal';
 import FilePermissionModal from '../components/ui/FilePermissionModal';
 import {
   renameFile,
@@ -27,10 +26,10 @@ import {
 } from '../services/FileScanner';
 import { moveToTrash } from '../services/TrashService';
 import {
-  getFavorites,
-  removeFavorite,
-  updateFavoriteFile,
-} from '../services/FavoritesService';
+  getConvertedFiles,
+  removeConvertedFile,
+  updateConvertedFile,
+} from '../services/ConvertedFilesService';
 import {
   addRecentDocument,
   updateRecentDocument,
@@ -41,8 +40,7 @@ import {
   formatTime,
   getIconForExtension,
 } from '../services/fileHelpers';
-import { saveConvertedPdf } from '../services/DocConverterService';
-import { addConvertedFile } from '../services/ConvertedFilesService';
+import { toggleFavorite } from '../services/FavoritesService';
 
 import EmptyFolderIcon from '../../Assets/svgicons/Empty Folder.svg';
 import { useTheme } from '../theme/ThemeContext';
@@ -50,10 +48,10 @@ import { ColorPalette } from '../theme/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const FavoriteScreen = () => {
+const ConvertedFilesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
 
-  const [favorites, setFavorites] = useState<ScannedFile[]>([]);
+  const [files, setFiles] = useState<ScannedFile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
@@ -71,21 +69,17 @@ const FavoriteScreen = () => {
   const [isRenameVisible, setIsRenameVisible] = useState<boolean>(false);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
 
-  // Manual Conversion state
-  const [isConvertModalVisible, setIsConvertModalVisible] = useState<boolean>(false);
-  const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>('converting');
-
-  const loadFavorites = useCallback(async (isPullRefresh = false) => {
+  const loadFiles = useCallback(async (isPullRefresh = false) => {
     if (isPullRefresh) {
       setRefreshing(true);
     } else {
       setLoading(true);
     }
     try {
-      const items = await getFavorites();
-      setFavorites(items);
+      const items = await getConvertedFiles();
+      setFiles(items);
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      console.error('Error loading converted files:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -94,11 +88,10 @@ const FavoriteScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      loadFavorites();
-    }, [loadFavorites])
+      loadFiles();
+    }, [loadFiles])
   );
 
-  // Listen for when user returns from Android Settings
   useEffect(() => {
     const subscription = AppState.addEventListener(
       'change',
@@ -160,17 +153,6 @@ const FavoriteScreen = () => {
     setIsMenuVisible(true);
   };
 
-  const handleMenuUnfavorite = async () => {
-    if (!selectedFileForMenu) return;
-    const targetFile = selectedFileForMenu;
-    try {
-      await removeFavorite(targetFile.uri);
-      setFavorites((prev) => prev.filter((f) => f.uri !== targetFile.uri && f.id !== targetFile.id));
-    } catch (err: any) {
-      console.error('Unfavorite error:', err);
-    }
-  };
-
   const handleMenuShare = async () => {
     if (!selectedFileForMenu) return;
     try {
@@ -198,7 +180,8 @@ const FavoriteScreen = () => {
           onPress: async () => {
             try {
               await moveToTrash(targetFile);
-              setFavorites((prev) =>
+              await removeConvertedFile(targetFile.uri);
+              setFiles((prev) =>
                 prev.filter((f) => f.uri !== targetFile.uri && f.id !== targetFile.id)
               );
             } catch (err: any) {
@@ -221,10 +204,10 @@ const FavoriteScreen = () => {
       setIsRenaming(true);
       const oldUri = selectedFileForMenu.uri;
       const updated = await renameFile(oldUri, trimmed);
-      await updateFavoriteFile(oldUri, updated);
+      await updateConvertedFile(oldUri, updated);
       await updateRecentDocument(oldUri, updated);
       setIsRenameVisible(false);
-      loadFavorites();
+      loadFiles();
     } catch (err: any) {
       Alert.alert('Rename Failed', err?.message || 'Could not rename file');
     } finally {
@@ -232,38 +215,10 @@ const FavoriteScreen = () => {
     }
   };
 
-  const handleMenuConvert = async () => {
+  const handleToggleFavorite = async () => {
     if (!selectedFileForMenu) return;
-    setIsConvertModalVisible(true);
-    setConvertStatus('converting');
-    try {
-      const startTime = Date.now();
-      const targetFile = selectedFileForMenu;
-      const permanentPath = await saveConvertedPdf(targetFile.uri, targetFile.name);
-      
-      const newName = targetFile.name.replace(/\.[^/.]+$/, '') + '.pdf';
-      const convertedFile: ScannedFile = {
-        ...targetFile,
-        id: permanentPath,
-        uri: `file://${permanentPath}`,
-        name: newName,
-        extension: 'pdf',
-        mimeType: 'application/pdf',
-      };
-      
-      await addConvertedFile(convertedFile);
-      
-      const elapsedTime = Date.now() - startTime;
-      const MIN_ANIMATION_DELAY = 2000; 
-      if (elapsedTime < MIN_ANIMATION_DELAY) {
-        await new Promise<void>(resolve => setTimeout(resolve, MIN_ANIMATION_DELAY - elapsedTime));
-      }
-      
-      setConvertStatus('success');
-    } catch (error: any) {
-      setIsConvertModalVisible(false);
-      Alert.alert('Conversion Failed', error?.message || 'Could not save converted PDF');
-    }
+    await toggleFavorite(selectedFileForMenu);
+    setIsMenuVisible(false);
   };
 
   const renderItem = ({ item }: { item: ScannedFile }) => (
@@ -287,9 +242,9 @@ const FavoriteScreen = () => {
           height={120}
           style={styles.emptyImage as any}
         />
-        <Text style={styles.emptyTitle}>No Favorites Yet!</Text>
+        <Text style={styles.emptyTitle}>No Converted Files Yet!</Text>
         <Text style={styles.emptySubtitle}>
-          Open any document and tap the favorite heart icon to access it quickly here.
+          Open any document and tap the Convert to PDF button to save it here.
         </Text>
       </View>
     );
@@ -299,24 +254,24 @@ const FavoriteScreen = () => {
     <View style={styles.container}>
       <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
 
-      {loading && favorites.length === 0 ? (
+      {loading && files.length === 0 ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#ED1C24" />
-          <Text style={styles.loadingText}>Loading favorites…</Text>
+          <Text style={styles.loadingText}>Loading converted files…</Text>
         </View>
       ) : (
         <FlatList
-          data={favorites}
+          data={files}
           keyExtractor={(item) => item.uri || item.id}
           renderItem={renderItem}
           contentContainerStyle={
-            favorites.length === 0 ? styles.emptyListContent : styles.listContent
+            files.length === 0 ? styles.emptyListContent : styles.listContent
           }
           ListEmptyComponent={renderEmpty}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => loadFavorites(true)}
+              onRefresh={() => loadFiles(true)}
               colors={['#ED1C24']}
               tintColor="#ED1C24"
             />
@@ -329,14 +284,12 @@ const FavoriteScreen = () => {
       <FileActionMenuModal
         visible={isMenuVisible}
         anchorPosition={menuAnchorPosition}
-        isFavorite={true}
-        isPdf={selectedFileForMenu?.extension.toLowerCase() === 'pdf'}
+        isFavorite={false} // Would need async check if we wanted to show correct state, but simple for now
         onClose={() => setIsMenuVisible(false)}
-        onToggleFavorite={handleMenuUnfavorite}
+        onToggleFavorite={handleToggleFavorite}
         onRename={() => setIsRenameVisible(true)}
         onDelete={handleMenuDelete}
         onShare={handleMenuShare}
-        onConvert={handleMenuConvert}
       />
 
       {/* Rename Modal */}
@@ -350,13 +303,6 @@ const FavoriteScreen = () => {
         isRenaming={isRenaming}
         onClose={() => setIsRenameVisible(false)}
         onSave={handleRenameSave}
-      />
-
-      {/* Convert To PDF Modal */}
-      <ConvertToPdfModal
-        visible={isConvertModalVisible}
-        status={convertStatus}
-        onClose={() => setIsConvertModalVisible(false)}
       />
 
       {/* File Access Permission Modal */}
@@ -422,4 +368,4 @@ const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => S
   },
 });
 
-export default FavoriteScreen;
+export default ConvertedFilesScreen;

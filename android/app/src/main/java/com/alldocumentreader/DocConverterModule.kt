@@ -59,8 +59,10 @@ class DocConverterModule(reactContext: ReactApplicationContext) :
      */
     @ReactMethod
     fun convertToPdf(inputUri: String, outputPath: String, promise: Promise) {
-        val context = reactApplicationContext ?: run {
-            promise.reject("E_NO_CONTEXT", "React application context is not available")
+        // Prefer currentActivity because PdfRenderingEngine requires it for WebView rendering.
+        // Fallback to reactApplicationContext for other conversions if Activity is unavailable.
+        val context = getCurrentActivity() ?: reactApplicationContext ?: run {
+            promise.reject("E_NO_CONTEXT", "React application context and Activity are not available")
             return
         }
 

@@ -38,7 +38,7 @@ class PptxParser : DocumentParser {
                     val name = entry.name
                     if (name.startsWith("ppt/slides/slide") && name.endsWith(".xml")) {
                         // Extract slide number from filename, e.g., "ppt/slides/slide12.xml" -> 12
-                        val slideNumStr = name.substringAfter("slide").substringBefore(".xml")
+                        val slideNumStr = name.substringAfterLast("slide").substringBefore(".xml")
                         val slideNum = slideNumStr.toIntOrNull() ?: 0
                         
                         val lines = extractTextFromSlideXml(zipInputStream, factory)

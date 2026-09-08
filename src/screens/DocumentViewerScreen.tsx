@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import Pdf from 'react-native-pdf';
 import ReactNativeBlobUtil from 'react-native-blob-util';
@@ -57,6 +58,9 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [pdfError, setPdfError] = useState<string | null>(null);
+
+  // Overlay states
+  const [isOverlayVisible, setIsOverlayVisible] = useState<boolean>(true);
 
   // Modal states
   const [isJumpModalVisible, setIsJumpModalVisible] = useState<boolean>(false);
@@ -248,15 +252,19 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
+    <View style={[styles.container, { paddingTop: isOverlayVisible ? insets.top : 0 }]}>
+      <StatusBar hidden={!isOverlayVisible} barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
 
-      {/* Top Header Component */}
-      <DocumentHeader
-        title={fileName}
-        onBack={() => navigation.goBack()}
-        onShare={handleShare}
-      />
+      {/* Top Header Component - Overlay */}
+      {isOverlayVisible && (
+        <View style={styles.headerWrapper}>
+          <DocumentHeader
+            title={fileName}
+            onBack={() => navigation.goBack()}
+            onShare={handleShare}
+          />
+        </View>
+      )}
 
       {/* Main Content Area */}
       <View style={styles.content}>
@@ -297,6 +305,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
                   spacing={12}
                   showsHorizontalScrollIndicator={false}
                   showsVerticalScrollIndicator={false}
+                  onPageSingleTap={() => setIsOverlayVisible(prev => !prev)}
                   renderActivityIndicator={() => (
                     <View style={styles.centerContainer}>
                       <ActivityIndicator size="large" color="#111827" />
@@ -316,10 +325,17 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
                   }}
                 />
 
-                <PageIndicator
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                />
+                {/* Page Indicator always below PDF but clickable to jump */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setIsJumpModalVisible(true)}
+                  style={[styles.pageIndicatorWrapper, { paddingBottom: !isOverlayVisible ? Math.max(insets.bottom, 12) : 0 }]}
+                >
+                  <PageIndicator
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                  />
+                </TouchableOpacity>
               </>
             )}
           </View>
@@ -327,11 +343,17 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
 
         {/* Text file viewer */}
         {isText && (
-          <TextDocumentViewer
-            content={textContent}
-            loading={loadingText}
-            error={textError}
-          />
+          <TouchableOpacity 
+            activeOpacity={1} 
+            style={styles.viewerContainer} 
+            onPress={() => setIsOverlayVisible(prev => !prev)}
+          >
+            <TextDocumentViewer
+              content={textContent}
+              loading={loadingText}
+              error={textError}
+            />
+          </TouchableOpacity>
         )}
 
         {/* Truly unsupported format (not PDF, not text, not convertible) */}
@@ -344,15 +366,19 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
         )}
       </View>
 
-      {/* Bottom Action Toolbar Component */}
-      <DocumentBottomToolbar
-        isFavorite={isFavorite}
-        bottomInset={insets.bottom}
-        onRename={() => setIsRenameModalVisible(true)}
-        onToggleFavorite={handleToggleFavorite}
-        onDelete={handleDelete}
-        onJumpToPage={() => setIsJumpModalVisible(true)}
-      />
+      {/* Bottom Action Toolbar Component - Overlay */}
+      {isOverlayVisible && (
+        <View style={styles.bottomToolbarWrapper}>
+          <DocumentBottomToolbar
+            isFavorite={isFavorite}
+            bottomInset={insets.bottom}
+            onRename={() => setIsRenameModalVisible(true)}
+            onToggleFavorite={handleToggleFavorite}
+            onDelete={handleDelete}
+            onJumpToPage={() => setIsJumpModalVisible(true)}
+          />
+        </View>
+      )}
 
       {/* Jump To Page Modal Component with Search / Stepper input */}
       <JumpToPageModal
@@ -381,6 +407,14 @@ const getStyles = (colors: ColorPalette) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  headerWrapper: {
+    backgroundColor: colors.background,
+    zIndex: 10,
+  },
+  bottomToolbarWrapper: {
+    backgroundColor: colors.surfaceElevated,
+    zIndex: 10,
+  },
   content: {
     flex: 1,
     backgroundColor: colors.background,
@@ -391,6 +425,10 @@ const getStyles = (colors: ColorPalette) => StyleSheet.create({
   },
   pdf: {
     flex: 1,
+    width: '100%',
+    backgroundColor: colors.background,
+  },
+  pageIndicatorWrapper: {
     width: '100%',
     backgroundColor: colors.background,
   },

@@ -70,13 +70,13 @@ class PptxParser : DocumentParser {
                 htmlBuilder.append("<html><head><style>")
                 htmlBuilder.append("body { font-family: sans-serif; margin: 0; padding: 0; }")
                 htmlBuilder.append(".slide { border-bottom: 2px solid #ccc; padding: 20px; page-break-after: always; text-align: center; }")
-                htmlBuilder.append(".text-block { margin: 15px 0; font-size: 16px; }")
+                htmlBuilder.append(".shape { margin: 15px auto; padding: 15px; max-width: 90%; }")
+                htmlBuilder.append(".text-block { margin: 10px 0; font-size: 16px; }")
                 htmlBuilder.append(".img-container { margin: 10px 0; }")
                 htmlBuilder.append("img { max-width: 100%; max-height: 800px; object-fit: contain; }")
                 htmlBuilder.append("</style></head><body>")
                 
                 for (slideFile in slideFiles) {
-                    htmlBuilder.append("<div class='slide'>")
                     
                     // Parse rels for this slide
                     val relsFile = File(relsDir, "${slideFile.name}.rels")
@@ -102,22 +102,75 @@ class PptxParser : DocumentParser {
                     slideParser.setInput(FileInputStream(slideFile), "UTF-8")
                     
                     var event = slideParser.eventType
-                    var inParagraph = false
-                    var inRun = false
+                    var inBg = false
+                    var inSpPr = false
+                    var inRPr = false
+                    
+                    var slideBgColor: String? = null
+                    var currentShapeBgColor: String? = null
+                    var currentShapeType: String? = null
+                    var currentTextColor: String? = null
+                    
                     var isBold = false
                     var isItalic = false
+                    
+                    var inParagraph = false
+                    var inRun = false
+                    
+                    val slideHtml = java.lang.StringBuilder()
                     
                     while (event != XmlPullParser.END_DOCUMENT) {
                         when (event) {
                             XmlPullParser.START_TAG -> {
                                 val tagName = slideParser.name
-                                if (tagName == "p") {
+                                if (tagName == "bg") inBg = true
+                                else if (tagName == "spPr") inSpPr = true
+                                else if (tagName == "rPr") inRPr = true
+                                
+                                if (tagName == "srgbClr") {
+                                    val colorVal = slideParser.getAttributeValue(null, "val")
+                                    if (colorVal != null) {
+                                        val hexColor = "#$colorVal"
+                                        if (inBg) slideBgColor = hexColor
+                                        else if (inSpPr) currentShapeBgColor = hexColor
+                                        else if (inRPr) currentTextColor = hexColor
+                                    }
+                                } else if (tagName == "schemeClr") {
+                                    val schemeVal = slideParser.getAttributeValue(null, "val")
+                                    if (schemeVal != null) {
+                                        val resolved = resolveThemeColor(schemeVal)
+                                        if (resolved != null) {
+                                            if (inBg) slideBgColor = resolved
+                                            else if (inSpPr) currentShapeBgColor = resolved
+                                            else if (inRPr) currentTextColor = resolved
+                                        }
+                                    }
+                                } else if (tagName == "prstGeom" && inSpPr) {
+                                    currentShapeType = slideParser.getAttributeValue(null, "prst")
+                                } else if (tagName == "sp" || tagName == "pic" || tagName == "graphicFrame") {
+                                    // Reset shape properties when a new visual element starts
+                                    currentShapeBgColor = null
+                                    currentShapeType = null
+                                } else if (tagName == "txBody") {
+                                    // txBody contains paragraphs for a shape. We can open the shape div here.
+                                    val shapeStyle = StringBuilder()
+                                    if (currentShapeBgColor != null) shapeStyle.append("background-color: $currentShapeBgColor; ")
+                                    if (currentShapeType == "ellipse") shapeStyle.append("border-radius: 50%; ")
+                                    else if (currentShapeType == "roundRect") shapeStyle.append("border-radius: 15px; ")
+                                    
+                                    if (shapeStyle.isNotEmpty()) {
+                                        slideHtml.append("<div class='shape' style='$shapeStyle'>")
+                                    } else {
+                                        slideHtml.append("<div class='shape'>")
+                                    }
+                                } else if (tagName == "p") {
                                     inParagraph = true
-                                    htmlBuilder.append("<div class='text-block'>")
+                                    slideHtml.append("<div class='text-block'>")
                                 } else if (tagName == "r") {
                                     inRun = true
                                     isBold = false
                                     isItalic = false
+                                    currentTextColor = null
                                 } else if (tagName == "rPr") {
                                     for (i in 0 until slideParser.attributeCount) {
                                         if (slideParser.getAttributeName(i) == "b" && slideParser.getAttributeValue(i) == "1") isBold = true
@@ -128,7 +181,10 @@ class PptxParser : DocumentParser {
                                     var styledText = text.replace("<", "&lt;").replace(">", "&gt;")
                                     if (isBold) styledText = "<b>$styledText</b>"
                                     if (isItalic) styledText = "<i>$styledText</i>"
-                                    htmlBuilder.append(styledText)
+                                    if (currentTextColor != null) {
+                                        styledText = "<span style='color: $currentTextColor;'>$styledText</span>"
+                                    }
+                                    slideHtml.append(styledText)
                                 } else if (tagName == "blip") {
                                     var embedId: String? = null
                                     for (i in 0 until slideParser.attributeCount) {
@@ -145,7 +201,7 @@ class PptxParser : DocumentParser {
                                             if (imageFile.exists()) {
                                                 val base64 = downsampleImageToBase64(imageFile)
                                                 if (base64 != null) {
-                                                    htmlBuilder.append("<div class='img-container'><img src='data:image/jpeg;base64,$base64' /></div>")
+                                                    slideHtml.append("<div class='img-container'><img src='data:image/jpeg;base64,$base64' /></div>")
                                                 }
                                             }
                                         }
@@ -154,9 +210,14 @@ class PptxParser : DocumentParser {
                             }
                             XmlPullParser.END_TAG -> {
                                 val tagName = slideParser.name
-                                if (tagName == "p") {
+                                if (tagName == "bg") inBg = false
+                                else if (tagName == "spPr") inSpPr = false
+                                else if (tagName == "rPr") inRPr = false
+                                else if (tagName == "txBody") {
+                                    slideHtml.append("</div>") // Close the shape div
+                                } else if (tagName == "p") {
                                     inParagraph = false
-                                    htmlBuilder.append("</div>")
+                                    slideHtml.append("</div>")
                                 } else if (tagName == "r") {
                                     inRun = false
                                 }
@@ -169,6 +230,9 @@ class PptxParser : DocumentParser {
                         }
                     }
                     
+                    val slideContainerStyle = if (slideBgColor != null) "background-color: $slideBgColor;" else ""
+                    htmlBuilder.append("<div class='slide' style='$slideContainerStyle'>")
+                    htmlBuilder.append(slideHtml.toString())
                     htmlBuilder.append("</div>")
                 }
                 
@@ -215,5 +279,23 @@ class PptxParser : DocumentParser {
         val bytes = outputStream.toByteArray()
         bitmap.recycle()
         return Base64.encodeToString(bytes, Base64.NO_WRAP)
+    }
+
+    private fun resolveThemeColor(scheme: String): String? {
+        return when (scheme) {
+            "tx1", "dk1" -> "#000000"
+            "bg1", "lt1" -> "#FFFFFF"
+            "tx2", "dk2" -> "#1F497D"
+            "bg2", "lt2" -> "#EEECE1"
+            "accent1" -> "#4F81BD"
+            "accent2" -> "#C0504D"
+            "accent3" -> "#9BBB59"
+            "accent4" -> "#8064A2"
+            "accent5" -> "#4BACC6"
+            "accent6" -> "#F79646"
+            "hlink" -> "#0000FF"
+            "folHlink" -> "#800080"
+            else -> null
+        }
     }
 }

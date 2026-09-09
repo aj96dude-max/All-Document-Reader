@@ -46,6 +46,7 @@ import { addConvertedFile } from '../services/ConvertedFilesService';
 
 import EmptyFolderIcon from '../../Assets/svgicons/Empty Folder.svg';
 import { useTheme } from '../theme/ThemeContext';
+import LottieView from 'lottie-react-native';
 import { ColorPalette } from '../theme/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -301,8 +302,12 @@ const FavoriteScreen = () => {
 
       {loading && favorites.length === 0 ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#ED1C24" />
-          <Text style={styles.loadingText}>Loading favorites…</Text>
+          <LottieView
+            source={require('../../Assets/anim/loading-animation.json')}
+            autoPlay
+            loop
+            style={{ width: 150, height: 150 }}
+          />
         </View>
       ) : (
         <FlatList

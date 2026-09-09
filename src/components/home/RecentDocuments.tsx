@@ -41,6 +41,7 @@ import { addConvertedFile } from '../../services/ConvertedFilesService';
 import SearchIcon from '../../../Assets/svgicons/search.svg';
 import CloseIcon from '../../../Assets/svgicons/close.svg';
 import { useTheme } from '../../theme/ThemeContext';
+import LottieView from 'lottie-react-native';
 import { ColorPalette } from '../../theme/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -53,6 +54,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
   const navigation = useNavigation<NavigationProp>();
 
   const [recentFiles, setRecentFiles] = useState<ScannedFile[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const { colors, mode } = useTheme();
@@ -71,11 +73,14 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
   const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>('converting');
 
   const loadRecents = useCallback(async () => {
+    setLoading(true);
     try {
       const items = await getRecentDocuments();
       setRecentFiles(items);
     } catch (error) {
       console.error('Error loading recent documents:', error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -282,7 +287,16 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
       )}
 
       {/* Content */}
-      {recentFiles.length === 0 ? (
+      {loading ? (
+        <View style={styles.centerLoading}>
+          <LottieView
+            source={require('../../../Assets/anim/loading-animation.json')}
+            autoPlay
+            loop
+            style={{ width: 150, height: 150 }}
+          />
+        </View>
+      ) : recentFiles.length === 0 ? (
         <EmptyDocState />
       ) : filteredFiles.length === 0 ? (
         <View style={styles.noSearchMatchContainer}>
@@ -420,6 +434,11 @@ const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => S
   listContainer: {
     flex: 1,
     marginTop: 2,
+  },
+  centerLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   noSearchMatchContainer: {
     paddingVertical: 36,

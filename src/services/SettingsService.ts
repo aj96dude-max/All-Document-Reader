@@ -10,11 +10,13 @@ import { ThemeMode } from '../theme/ThemeContext';
 export interface AppSettings {
   keepScreenOn: boolean;
   theme: ThemeMode;
+  hasViewedOnboarding?: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   keepScreenOn: true,
   theme: 'system',
+  hasViewedOnboarding: false,
 };
 
 /**

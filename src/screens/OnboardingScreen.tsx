@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/types';
+import { saveAppSettings } from '../services/SettingsService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -56,15 +57,17 @@ const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const scrollTo = () => {
+  const scrollTo = async () => {
     if (currentIndex < slides.length - 1) {
       slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
+      await saveAppSettings({ hasViewedOnboarding: true });
       navigation.replace('MainTabs');
     }
   };
 
-  const skip = () => {
+  const skip = async () => {
+    await saveAppSettings({ hasViewedOnboarding: true });
     navigation.replace('MainTabs');
   };
 

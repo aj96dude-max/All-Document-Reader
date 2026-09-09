@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
   Alert,
+  FlatList,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -290,10 +291,14 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
           </Text>
         </View>
       ) : (
-        <View style={styles.listContainer}>
-          {filteredFiles.map((file) => (
+        <FlatList
+          data={filteredFiles}
+          keyExtractor={(file) => file.uri || file.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          style={styles.listContainer}
+          renderItem={({ item: file }) => (
             <FileListItem
-              key={file.uri || file.id}
               name={file.name}
               size={formatBytes(file.size)}
               date={formatDate(file.modifiedDate)}
@@ -302,8 +307,8 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
               onPress={() => handleFilePress(file)}
               onMorePress={(pos) => handleMorePress(file, pos)}
             />
-          ))}
-        </View>
+          )}
+        />
       )}
 
       {/* 3-Dots Action Menu Modal */}
@@ -345,9 +350,10 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
 
 const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   container: {
+    flex: 1,
     marginTop: 22,
     paddingHorizontal: 16,
-    paddingBottom: 30,
+    paddingBottom: 10,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -412,6 +418,7 @@ const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => S
     tintColor: colors.iconInactive,
   },
   listContainer: {
+    flex: 1,
     marginTop: 2,
   },
   noSearchMatchContainer: {

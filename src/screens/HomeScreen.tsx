@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   StatusBar,
   View,
@@ -88,11 +87,7 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.screen}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.container}>
         <StatusBar
           barStyle={
             mode === 'dark' ||
@@ -103,7 +98,7 @@ const HomeScreen = () => {
         />
         <ToolsContainer onRequirePermission={requirePermission} />
         <RecentDocuments onRequirePermission={requirePermission} />
-      </ScrollView>
+      </View>
 
       {/* File Access Permission Modal */}
       <FilePermissionModal

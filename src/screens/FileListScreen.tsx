@@ -54,22 +54,38 @@ const FileListScreen = ({ route, navigation }: Props) => {
   const styles = React.useMemo(() => getStyles(colors), [colors]);
 
   // 3-dots Menu & Rename state
-  const [selectedFileForMenu, setSelectedFileForMenu] = useState<ScannedFile | null>(null);
-  const [selectedFileIsFavorite, setSelectedFileIsFavorite] = useState<boolean>(false);
-  const [menuAnchorPosition, setMenuAnchorPosition] = useState<{ top: number; right: number } | null>(null);
+  const [selectedFileForMenu, setSelectedFileForMenu] =
+    useState<ScannedFile | null>(null);
+  const [selectedFileIsFavorite, setSelectedFileIsFavorite] =
+    useState<boolean>(false);
+  const [menuAnchorPosition, setMenuAnchorPosition] = useState<{
+    top: number;
+    right: number;
+  } | null>(null);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isRenameVisible, setIsRenameVisible] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
 
   // Manual Conversion state
   const [isConvertModalVisible, setIsConvertModalVisible] = useState(false);
-  const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>('converting');
+  const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>(
+    'converting',
+  );
 
   const loadFiles = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      const minDelay = 1500; // 1 second minimum loading animation
+      const startTime = Date.now();
+
       const result = await scanFiles(fileType);
+
+      const elapsed = Date.now() - startTime;
+      if (elapsed < minDelay) {
+        await new Promise<void>(resolve => setTimeout(resolve, minDelay - elapsed));
+      }
+
       console.log(`Scanned ${result.length} ${fileType} files.`);
       setFiles(result);
     } catch (e: any) {
@@ -83,7 +99,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
   useFocusEffect(
     useCallback(() => {
       loadFiles();
-    }, [loadFiles])
+    }, [loadFiles]),
   );
 
   const handleFilePress = async (file: ScannedFile) => {
@@ -91,16 +107,21 @@ const FileListScreen = ({ route, navigation }: Props) => {
     navigation.navigate('FileViewer', { file });
   };
 
-  const handleMorePress = async (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
+  const handleMorePress = (
+    file: ScannedFile,
+    position?: { pageX: number; pageY: number },
+  ) => {
     setSelectedFileForMenu(file);
-    const isFav = await checkIsFavorite(file.uri);
-    setSelectedFileIsFavorite(isFav);
     if (position) {
       setMenuAnchorPosition({ top: position.pageY, right: 24 });
     } else {
       setMenuAnchorPosition(null);
     }
     setIsMenuVisible(true);
+    
+    checkIsFavorite(file.uri).then(isFav => {
+      setSelectedFileIsFavorite(isFav);
+    }).catch(console.error);
   };
 
   const handleToggleFavorite = async () => {
@@ -119,7 +140,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
       await shareFile(
         selectedFileForMenu.uri,
         selectedFileForMenu.mimeType,
-        selectedFileForMenu.name
+        selectedFileForMenu.name,
       );
     } catch (err: any) {
       Alert.alert('Share Failed', err?.message || 'Could not share file');
@@ -140,15 +161,20 @@ const FileListScreen = ({ route, navigation }: Props) => {
           onPress: async () => {
             try {
               await moveToTrash(targetFile);
-              setFiles((prev) =>
-                prev.filter((f) => f.uri !== targetFile.uri && f.id !== targetFile.id)
+              setFiles(prev =>
+                prev.filter(
+                  f => f.uri !== targetFile.uri && f.id !== targetFile.id,
+                ),
               );
             } catch (err: any) {
-              Alert.alert('Error', err?.message || 'Could not move file to trash');
+              Alert.alert(
+                'Error',
+                err?.message || 'Could not move file to trash',
+              );
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -183,8 +209,11 @@ const FileListScreen = ({ route, navigation }: Props) => {
     try {
       const startTime = Date.now();
       const targetFile = selectedFileForMenu;
-      const permanentPath = await saveConvertedPdf(targetFile.uri, targetFile.name);
-      
+      const permanentPath = await saveConvertedPdf(
+        targetFile.uri,
+        targetFile.name,
+      );
+
       const newName = targetFile.name.replace(/\.[^/.]+$/, '') + '.pdf';
       const convertedFile: ScannedFile = {
         ...targetFile,
@@ -194,19 +223,24 @@ const FileListScreen = ({ route, navigation }: Props) => {
         extension: 'pdf',
         mimeType: 'application/pdf',
       };
-      
+
       await addConvertedFile(convertedFile);
-      
+
       const elapsedTime = Date.now() - startTime;
-      const MIN_ANIMATION_DELAY = 2000; 
+      const MIN_ANIMATION_DELAY = 2000;
       if (elapsedTime < MIN_ANIMATION_DELAY) {
-        await new Promise<void>(resolve => setTimeout(resolve, MIN_ANIMATION_DELAY - elapsedTime));
+        await new Promise<void>(resolve =>
+          setTimeout(resolve, MIN_ANIMATION_DELAY - elapsedTime),
+        );
       }
-      
+
       setConvertStatus('success');
     } catch (error: any) {
       setIsConvertModalVisible(false);
-      Alert.alert('Conversion Failed', error?.message || 'Could not save converted PDF');
+      Alert.alert(
+        'Conversion Failed',
+        error?.message || 'Could not save converted PDF',
+      );
     }
   };
 
@@ -218,7 +252,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
       time={formatTime(item.modifiedDate)}
       icon={getIconForExtension(item.extension)}
       onPress={() => handleFilePress(item)}
-      onMorePress={(pos) => handleMorePress(item, pos)}
+      onMorePress={pos => handleMorePress(item, pos)}
     />
   );
 
@@ -236,10 +270,24 @@ const FileListScreen = ({ route, navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
+      <StatusBar
+        barStyle={
+          mode === 'dark' ||
+          (mode === 'system' && colors.background === '#141414')
+            ? 'light-content'
+            : 'dark-content'
+        }
+      />
       <FileListHeader title={fileType} onBack={() => navigation.goBack()} />
       {loading ? (
-        <Loading message="Scanning device…" />
+        <View style={styles.center}>
+          <LottieView
+            source={require('../../Assets/anim/loading-animation.json')}
+            autoPlay
+            loop
+            style={{ width: 150, height: 150 }}
+          />
+        </View>
       ) : error ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -247,7 +295,7 @@ const FileListScreen = ({ route, navigation }: Props) => {
       ) : (
         <FlatList
           data={files}
-          keyExtractor={(item) => item.uri || item.id}
+          keyExtractor={item => item.uri || item.id}
           renderItem={renderItem}
           contentContainerStyle={
             files.length === 0 ? styles.emptyContainer : styles.listContent
@@ -275,7 +323,8 @@ const FileListScreen = ({ route, navigation }: Props) => {
         visible={isRenameVisible}
         initialName={
           selectedFileForMenu
-            ? selectedFileForMenu.name.replace(/\.[^/.]+$/, '') || selectedFileForMenu.name
+            ? selectedFileForMenu.name.replace(/\.[^/.]+$/, '') ||
+              selectedFileForMenu.name
             : ''
         }
         isRenaming={isRenaming}
@@ -293,41 +342,42 @@ const FileListScreen = ({ route, navigation }: Props) => {
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyImage: {
-    width: 120,
-    height: 120,
-    marginBottom: 16,
-    opacity: 0.6,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.primary,
-    textAlign: 'center',
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    listContent: {
+      paddingHorizontal: 16,
+      paddingBottom: 20,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyImage: {
+      width: 120,
+      height: 120,
+      marginBottom: 16,
+      opacity: 0.6,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    errorText: {
+      fontSize: 14,
+      color: colors.primary,
+      textAlign: 'center',
+    },
+  });
 
 export default FileListScreen;

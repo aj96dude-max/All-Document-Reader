@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/types';
+import { getAppSettings } from '../services/SettingsService';
 
 import AppIcon from '../../Assets/svgicons/App Icon.svg';
 
@@ -54,15 +55,25 @@ const SplashScreen: React.FC<Props> = ({ navigation }) => {
     });
 
     // Auto navigate to main tabs after splash display
-    const timer = setTimeout(() => {
-      navigation.replace('MainTabs');
+    const timer = setTimeout(async () => {
+      const settings = await getAppSettings();
+      if (settings.hasViewedOnboarding) {
+        navigation.replace('MainTabs');
+      } else {
+        navigation.replace('Onboarding');
+      }
     }, 2500);
 
     return () => clearTimeout(timer);
   }, [iconFadeAnim, iconScaleAnim, textFadeAnim, textSlideAnim, navigation]);
 
-  const handleSkip = () => {
-    navigation.replace('MainTabs');
+  const handleSkip = async () => {
+    const settings = await getAppSettings();
+    if (settings.hasViewedOnboarding) {
+      navigation.replace('MainTabs');
+    } else {
+      navigation.replace('Onboarding');
+    }
   };
 
   return (

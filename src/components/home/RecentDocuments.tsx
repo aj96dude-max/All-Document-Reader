@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
   Alert,
+  FlatList,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -40,6 +41,7 @@ import { addConvertedFile } from '../../services/ConvertedFilesService';
 import SearchIcon from '../../../Assets/svgicons/search.svg';
 import CloseIcon from '../../../Assets/svgicons/close.svg';
 import { useTheme } from '../../theme/ThemeContext';
+import LottieView from 'lottie-react-native';
 import { ColorPalette } from '../../theme/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -52,6 +54,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
   const navigation = useNavigation<NavigationProp>();
 
   const [recentFiles, setRecentFiles] = useState<ScannedFile[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const { colors, mode } = useTheme();
@@ -70,11 +73,14 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
   const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>('converting');
 
   const loadRecents = useCallback(async () => {
+    setLoading(true);
     try {
       const items = await getRecentDocuments();
       setRecentFiles(items);
     } catch (error) {
       console.error('Error loading recent documents:', error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -101,16 +107,18 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
     }
   };
 
-  const handleMorePress = async (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
+  const handleMorePress = (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
     setSelectedFileForMenu(file);
-    const isFav = await checkIsFavorite(file.uri);
-    setSelectedFileIsFavorite(isFav);
     if (position) {
       setMenuAnchorPosition({ top: position.pageY, right: 24 });
     } else {
       setMenuAnchorPosition(null);
     }
     setIsMenuVisible(true);
+
+    checkIsFavorite(file.uri).then(isFav => {
+      setSelectedFileIsFavorite(isFav);
+    }).catch(console.error);
   };
 
   const handleToggleFavorite = async () => {
@@ -281,7 +289,16 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
       )}
 
       {/* Content */}
-      {recentFiles.length === 0 ? (
+      {loading ? (
+        <View style={styles.centerLoading}>
+          <LottieView
+            source={require('../../../Assets/anim/loading-animation.json')}
+            autoPlay
+            loop
+            style={{ width: 150, height: 150 }}
+          />
+        </View>
+      ) : recentFiles.length === 0 ? (
         <EmptyDocState />
       ) : filteredFiles.length === 0 ? (
         <View style={styles.noSearchMatchContainer}>
@@ -290,10 +307,14 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
           </Text>
         </View>
       ) : (
-        <View style={styles.listContainer}>
-          {filteredFiles.map((file) => (
+        <FlatList
+          data={filteredFiles}
+          keyExtractor={(file) => file.uri || file.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          style={styles.listContainer}
+          renderItem={({ item: file }) => (
             <FileListItem
-              key={file.uri || file.id}
               name={file.name}
               size={formatBytes(file.size)}
               date={formatDate(file.modifiedDate)}
@@ -302,8 +323,8 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
               onPress={() => handleFilePress(file)}
               onMorePress={(pos) => handleMorePress(file, pos)}
             />
-          ))}
-        </View>
+          )}
+        />
       )}
 
       {/* 3-Dots Action Menu Modal */}
@@ -345,9 +366,10 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
 
 const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   container: {
+    flex: 1,
     marginTop: 22,
     paddingHorizontal: 16,
-    paddingBottom: 30,
+    paddingBottom: 10,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -412,7 +434,13 @@ const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => S
     tintColor: colors.iconInactive,
   },
   listContainer: {
+    flex: 1,
     marginTop: 2,
+  },
+  centerLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   noSearchMatchContainer: {
     paddingVertical: 36,

@@ -55,14 +55,14 @@ const SplashScreen: React.FC<Props> = ({ navigation }) => {
 
     // Auto navigate to main tabs after splash display
     const timer = setTimeout(() => {
-      navigation.replace('MainTabs');
+      navigation.replace('Onboarding');
     }, 2500);
 
     return () => clearTimeout(timer);
   }, [iconFadeAnim, iconScaleAnim, textFadeAnim, textSlideAnim, navigation]);
 
   const handleSkip = () => {
-    navigation.replace('MainTabs');
+    navigation.replace('Onboarding');
   };
 
   return (

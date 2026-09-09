@@ -12,6 +12,7 @@ import FileListScreen from '../screens/FileListScreen';
 import DocumentViewerScreen from '../screens/DocumentViewerScreen';
 import TrashScreen from '../screens/TrashScreen';
 import ConvertedFilesScreen from '../screens/ConvertedFilesScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 import SideMenu from '../components/SideMenu';
 import CustomHeader from '../components/CustomHeader';
 import { RootStackParamList } from '../types/types';
@@ -140,6 +141,7 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="MainTabs">
           {() => <MainTabs onOpenSideMenu={() => setIsSideMenuVisible(true)} />}
         </Stack.Screen>

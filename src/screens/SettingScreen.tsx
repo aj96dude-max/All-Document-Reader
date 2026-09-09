@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  Alert,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -20,6 +21,7 @@ import {
   shareApp,
   rateApp,
 } from '../services/SettingsService';
+import { clearConversionCache } from '../services/DocConverterService';
 import { useTheme, ThemeMode } from '../theme/ThemeContext';
 import { ColorPalette } from '../theme/colors';
 
@@ -30,6 +32,7 @@ import DeleteForeverIcon from '../../Assets/svgicons/delete_forever.svg';
 import SecurityIcon from '../../Assets/svgicons/security.svg';
 import ShareIcon from '../../Assets/svgicons/share.svg';
 import FamilyStarIcon from '../../Assets/svgicons/family_star.svg';
+import StorageIcon from '../../Assets/svgicons/storage.svg';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -75,6 +78,15 @@ const SettingScreen = () => {
     navigation.navigate('Trash');
   };
 
+  const handleClearCache = async () => {
+    try {
+      await clearConversionCache();
+      Alert.alert('Success', 'Document conversion cache cleared successfully.');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to clear cache.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar
@@ -111,6 +123,13 @@ const SettingScreen = () => {
           title="Trash"
           type="link"
           onPress={handleTrashPress}
+        />
+
+        <SettingItem
+          icon={StorageIcon}
+          title="Clear Conversion Cache"
+          type="link"
+          onPress={handleClearCache}
         />
 
         <SettingItem

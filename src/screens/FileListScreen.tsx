@@ -107,19 +107,21 @@ const FileListScreen = ({ route, navigation }: Props) => {
     navigation.navigate('FileViewer', { file });
   };
 
-  const handleMorePress = async (
+  const handleMorePress = (
     file: ScannedFile,
     position?: { pageX: number; pageY: number },
   ) => {
     setSelectedFileForMenu(file);
-    const isFav = await checkIsFavorite(file.uri);
-    setSelectedFileIsFavorite(isFav);
     if (position) {
       setMenuAnchorPosition({ top: position.pageY, right: 24 });
     } else {
       setMenuAnchorPosition(null);
     }
     setIsMenuVisible(true);
+    
+    checkIsFavorite(file.uri).then(isFav => {
+      setSelectedFileIsFavorite(isFav);
+    }).catch(console.error);
   };
 
   const handleToggleFavorite = async () => {

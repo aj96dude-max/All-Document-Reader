@@ -107,16 +107,18 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
     }
   };
 
-  const handleMorePress = async (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
+  const handleMorePress = (file: ScannedFile, position?: { pageX: number; pageY: number }) => {
     setSelectedFileForMenu(file);
-    const isFav = await checkIsFavorite(file.uri);
-    setSelectedFileIsFavorite(isFav);
     if (position) {
       setMenuAnchorPosition({ top: position.pageY, right: 24 });
     } else {
       setMenuAnchorPosition(null);
     }
     setIsMenuVisible(true);
+
+    checkIsFavorite(file.uri).then(isFav => {
+      setSelectedFileIsFavorite(isFav);
+    }).catch(console.error);
   };
 
   const handleToggleFavorite = async () => {

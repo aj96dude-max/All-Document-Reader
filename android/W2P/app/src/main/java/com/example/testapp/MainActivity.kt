@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.docx2pdf.OfflineDocConverterImpl
 import com.example.docx2pdf.parser.DocumentElement
+import com.example.docx2pdf.parser.SlideShape
 import com.example.docx2pdf.parser.UnifiedDocumentState
 import kotlinx.coroutines.launch
 import android.webkit.WebView
@@ -203,6 +204,26 @@ class MainActivity : AppCompatActivity() {
                         pdfPreview.setImageURI(null) // clear cache
                         pdfPreview.setImageURI(state.uri)
                         pdfPreview.visibility = View.VISIBLE
+                    }
+                    is UnifiedDocumentState.PagedState -> {
+                        scrollPreview.visibility = View.VISIBLE
+                        val sb = StringBuilder()
+                        var pageIndex = 1
+                        state.pages.collect { shapes ->
+                            sb.appendLine("--- Page $pageIndex ---")
+                            for (shape in shapes) {
+                                if (shape is SlideShape.TextBlock) {
+                                    for (paragraph in shape.paragraphs) {
+                                        val line = paragraph.runs.joinToString("") { it.text }
+                                        if (line.isNotBlank()) {
+                                            sb.appendLine(line)
+                                        }
+                                    }
+                                }
+                            }
+                            pageIndex++
+                        }
+                        textPreview.text = sb.toString()
                     }
                 }
             } else {

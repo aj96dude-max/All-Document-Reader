@@ -3,7 +3,6 @@ package com.example.docx2pdf.parser
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
@@ -14,7 +13,8 @@ import java.util.zip.ZipInputStream
  * A zero-dependency parser for Excel (.xlsx) files.
  * Uses a two-pass ZIP streaming approach:
  * 1. Pass 1: Extract the shared string table (`xl/sharedStrings.xml`).
- * 2. Pass 2: Extract the rows and cells (`xl/worksheets/sheet1.xml`), emitting TableRows via Flow.
+ * 2. Pass 2: Extract the rows and cells from all `xl/worksheets/sheet*.xml` files.
+ * Generates an HTML representation to maintain grid layout, column padding, and wrap text.
  */
 class XlsxParser : DocumentParser {
     override suspend fun parse(context: Context, inputUri: Uri): UnifiedDocumentState {
@@ -39,31 +39,40 @@ class XlsxParser : DocumentParser {
                 }
             }
 
-            // Pass 2: Extract Sheet Data (Flow)
-            val flow = flow {
-                context.contentResolver.openInputStream(inputUri)?.use { stream ->
-                    val zipInputStream = ZipInputStream(stream)
-                    
-                    val factory = XmlPullParserFactory.newInstance()
-                    factory.isNamespaceAware = true
+            // Pass 2: Extract Sheet Data to HTML
+            val htmlBuilder = java.lang.StringBuilder()
+            htmlBuilder.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\">")
+            htmlBuilder.append("<style>")
+            htmlBuilder.append("body { font-family: sans-serif; margin: 20px; } ")
+            htmlBuilder.append("table { border-collapse: collapse; width: 100%; margin-bottom: 30px; } ")
+            htmlBuilder.append("th, td { border: 1px solid #d0d7de; padding: 6px 12px; text-align: left; vertical-align: top; word-wrap: break-word; } ")
+            htmlBuilder.append("h2 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; color: #333; }")
+            htmlBuilder.append("</style></head><body>")
+            
+            var sheetCount = 1
 
-                    while (true) {
-                        val entry = zipInputStream.nextEntry ?: break
-                        if (entry.name.startsWith("xl/worksheets/sheet") && entry.name.endsWith(".xml")) {
-                            // Parse sheet and emit rows
-                            parseSheet(zipInputStream, factory, sharedStrings) { row ->
-                                emit(DocumentElement.TableRow(row))
-                            }
-                            // We only process the first sheet we find to avoid massive documents,
-                            // or we could process all of them. For now, just break after the first.
-                            break
-                        }
-                        zipInputStream.closeEntry()
+            context.contentResolver.openInputStream(inputUri)?.use { stream ->
+                val zipInputStream = ZipInputStream(stream)
+                
+                val factory = XmlPullParserFactory.newInstance()
+                factory.isNamespaceAware = true
+
+                while (true) {
+                    val entry = zipInputStream.nextEntry ?: break
+                    if (entry.name.startsWith("xl/worksheets/sheet") && entry.name.endsWith(".xml")) {
+                        htmlBuilder.append("<h2>Sheet $sheetCount</h2>")
+                        htmlBuilder.append("<table>")
+                        parseSheet(zipInputStream, factory, sharedStrings, htmlBuilder)
+                        htmlBuilder.append("</table>")
+                        sheetCount++
                     }
+                    zipInputStream.closeEntry()
                 }
             }
             
-            UnifiedDocumentState.StreamState(flow)
+            htmlBuilder.append("</body></html>")
+            
+            UnifiedDocumentState.HtmlState(htmlBuilder.toString())
         }
     }
 
@@ -111,33 +120,49 @@ class XlsxParser : DocumentParser {
         }
     }
 
-    private suspend fun parseSheet(
+    private fun parseSheet(
         zipInputStream: ZipInputStream,
         factory: XmlPullParserFactory,
         sharedStrings: List<String>,
-        onRowParsed: suspend (List<String>) -> Unit
+        htmlBuilder: StringBuilder
     ) {
         try {
             val parser = factory.newPullParser()
             parser.setInput(zipInputStream, "UTF-8")
             
             var eventType = parser.eventType
-            val currentRow = mutableListOf<String>()
             var isSharedString = false
             var inValueTag = false
+            var hasVNode = false
             var currentValue = StringBuilder()
+            var currentColumnIndex = 0
 
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 when (eventType) {
                     XmlPullParser.START_TAG -> {
                         when (parser.name) {
+                            "row" -> {
+                                htmlBuilder.append("<tr>")
+                                currentColumnIndex = 0
+                            }
                             "c" -> {
-                                // Cell start
+                                val rAttr = parser.getAttributeValue(null, "r")
+                                if (rAttr != null) {
+                                    val colStr = rAttr.takeWhile { it.isLetter() }
+                                    val colIdx = colStrToIdx(colStr)
+                                    // Pad missing columns before this cell
+                                    while (currentColumnIndex < colIdx) {
+                                        htmlBuilder.append("<td></td>")
+                                        currentColumnIndex++
+                                    }
+                                }
                                 val type = parser.getAttributeValue(null, "t")
                                 isSharedString = (type == "s")
+                                hasVNode = false
                             }
                             "v" -> {
                                 inValueTag = true
+                                hasVNode = true
                             }
                         }
                     }
@@ -153,22 +178,24 @@ class XlsxParser : DocumentParser {
                         when (parser.name) {
                             "v" -> {
                                 inValueTag = false
+                            }
+                            "c" -> {
                                 val rawValue = currentValue.toString()
-                                if (isSharedString) {
-                                    val index = rawValue.toIntOrNull()
-                                    if (index != null && index >= 0 && index < sharedStrings.size) {
-                                        currentRow.add(sharedStrings[index])
-                                    } else {
-                                        currentRow.add(rawValue)
-                                    }
-                                } else {
-                                    currentRow.add(rawValue)
-                                }
+                                val displayValue = if (hasVNode) {
+                                    if (isSharedString) {
+                                        val index = rawValue.toIntOrNull()
+                                        if (index != null && index >= 0 && index < sharedStrings.size) {
+                                            sharedStrings[index]
+                                        } else rawValue
+                                    } else rawValue
+                                } else ""
+                                
+                                htmlBuilder.append("<td>").append(escapeHtml(displayValue)).append("</td>")
+                                currentColumnIndex++
                                 currentValue.clear()
                             }
                             "row" -> {
-                                onRowParsed(currentRow.toList())
-                                currentRow.clear()
+                                htmlBuilder.append("</tr>")
                             }
                         }
                     }
@@ -178,5 +205,21 @@ class XlsxParser : DocumentParser {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    private fun colStrToIdx(colStr: String): Int {
+        var idx = 0
+        for (char in colStr.uppercase()) {
+            idx = idx * 26 + (char - 'A' + 1)
+        }
+        return if (idx > 0) idx - 1 else 0
+    }
+
+    private fun escapeHtml(text: String): String {
+        return text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#039;")
     }
 }

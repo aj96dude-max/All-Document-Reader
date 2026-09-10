@@ -5,7 +5,6 @@ import {
   FlatList,
   Alert,
   Text,
-  Image,
   StatusBar,
 } from 'react-native';
 
@@ -17,7 +16,6 @@ import FileListItem from '../components/ui/FileListItem';
 import FileActionMenuModal from '../components/ui/FileActionMenuModal';
 import RenameModal from '../components/viewer/RenameModal';
 import ConvertToPdfModal from '../components/viewer/ConvertToPdfModal';
-import Loading from '../components/common/Loading';
 import { scanFiles, renameFile, shareFile } from '../services/FileScanner';
 import { moveToTrash } from '../services/TrashService';
 import {
@@ -76,14 +74,16 @@ const FileListScreen = ({ route, navigation }: Props) => {
     setLoading(true);
     setError(null);
     try {
-      const minDelay = 1500; // 1 second minimum loading animation
+      const minDelay = 1000; // 1 second minimum loading animation
       const startTime = Date.now();
 
       const result = await scanFiles(fileType);
 
       const elapsed = Date.now() - startTime;
       if (elapsed < minDelay) {
-        await new Promise<void>(resolve => setTimeout(resolve, minDelay - elapsed));
+        await new Promise<void>(resolve =>
+          setTimeout(resolve, minDelay - elapsed),
+        );
       }
 
       console.log(`Scanned ${result.length} ${fileType} files.`);
@@ -118,10 +118,12 @@ const FileListScreen = ({ route, navigation }: Props) => {
       setMenuAnchorPosition(null);
     }
     setIsMenuVisible(true);
-    
-    checkIsFavorite(file.uri).then(isFav => {
-      setSelectedFileIsFavorite(isFav);
-    }).catch(console.error);
+
+    checkIsFavorite(file.uri)
+      .then(isFav => {
+        setSelectedFileIsFavorite(isFav);
+      })
+      .catch(console.error);
   };
 
   const handleToggleFavorite = async () => {

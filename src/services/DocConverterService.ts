@@ -9,11 +9,41 @@ const { DocConverterModule } = NativeModules;
  * PDF and TXT are excluded because they already have native viewers.
  */
 export const CONVERTIBLE_EXTENSIONS = [
-  'docx', 'pptx', 'xlsx', 'epub', 'rtf', 'md',
-  'doc', 'ppt', 'xls',
-  'csv', 'tsv', 'json', 'xml', 'tex',
-  'jpg', 'png', 'webp', 'gif', 'bmp',
-  'java', 'kt', 'py', 'c', 'cpp', 'html', 'js', 'css', 'yaml', 'yml', 'sh', 'swift', 'rb', 'go', 'rs', 'php'
+  'docx',
+  'pptx',
+  'xlsx',
+  'epub',
+  'rtf',
+  'md',
+  'doc',
+  'ppt',
+  'xls',
+  'csv',
+  'tsv',
+  'json',
+  'xml',
+  'tex',
+  'jpg',
+  'png',
+  'webp',
+  'gif',
+  'bmp',
+  'java',
+  'kt',
+  'py',
+  'c',
+  'cpp',
+  'html',
+  'js',
+  'css',
+  'yaml',
+  'yml',
+  'sh',
+  'swift',
+  'rb',
+  'go',
+  'rs',
+  'php',
 ];
 
 /**
@@ -25,7 +55,6 @@ const CACHE_DIR = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/converted_pdfs`;
  * Directory where permanently saved converted PDFs are stored.
  */
 const PERMANENT_DIR = `${ReactNativeBlobUtil.fs.dirs.DocumentDir}/ConvertedFiles`;
-
 
 /**
  * Check if a file extension needs conversion (i.e., is not natively viewable as PDF/TXT).
@@ -43,17 +72,22 @@ function getCacheKey(uri: string, fileName: string): string {
   let hash = 0;
   for (let i = 0; i < uri.length; i++) {
     const char = uri.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
-  const baseName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-  return `${baseName}_${Math.abs(hash)}_v5`;
+  const baseName = fileName
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '_');
+  return `${baseName}_${Math.abs(hash)}_v6`;
 }
 
 /**
  * Get the cached PDF path for a source file, or null if not cached.
  */
-async function getCachedPdf(uri: string, fileName: string): Promise<string | null> {
+async function getCachedPdf(
+  uri: string,
+  fileName: string,
+): Promise<string | null> {
   try {
     const key = getCacheKey(uri, fileName);
     const cachedPath = `${CACHE_DIR}/${key}.pdf`;
@@ -83,7 +117,9 @@ export async function convertToPdf(
   }
 
   if (!DocConverterModule?.convertToPdf) {
-    throw new Error('DocConverterModule.convertToPdf is not available. Ensure the native module is linked.');
+    throw new Error(
+      'DocConverterModule.convertToPdf is not available. Ensure the native module is linked.',
+    );
   }
 
   // Check cache first
@@ -103,7 +139,10 @@ export async function convertToPdf(
   const outputPath = `${CACHE_DIR}/${key}.pdf`;
 
   // Perform conversion via native module
-  const resultPath: string = await DocConverterModule.convertToPdf(inputUri, outputPath);
+  const resultPath: string = await DocConverterModule.convertToPdf(
+    inputUri,
+    outputPath,
+  );
   return resultPath;
 }
 
@@ -132,7 +171,7 @@ export async function saveConvertedPdf(
   fileName: string,
 ): Promise<string> {
   const cachedPath = await convertToPdf(inputUri, fileName);
-  
+
   const dirExists = await ReactNativeBlobUtil.fs.exists(PERMANENT_DIR);
   if (!dirExists) {
     await ReactNativeBlobUtil.fs.mkdir(PERMANENT_DIR);
@@ -140,11 +179,11 @@ export async function saveConvertedPdf(
 
   const key = getCacheKey(inputUri, fileName);
   const permanentPath = `${PERMANENT_DIR}/${key}.pdf`;
-  
+
   const exists = await ReactNativeBlobUtil.fs.exists(permanentPath);
   if (!exists) {
     await ReactNativeBlobUtil.fs.cp(cachedPath, permanentPath);
   }
-  
+
   return permanentPath;
 }

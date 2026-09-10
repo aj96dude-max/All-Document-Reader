@@ -28,6 +28,45 @@ sealed class DocumentElement {
 }
 
 /**
+ * Represents a drawn shape on a single slide page.
+ */
+sealed class SlideShape {
+    data class TextBlock(
+        val x: Double, val y: Double, val w: Double, val h: Double,
+        val paragraphs: List<Paragraph>
+    ) : SlideShape() {
+        data class Paragraph(
+            val runs: List<Run>,
+            val align: String?
+        )
+        data class Run(
+            val text: String,
+            val color: String?,
+            val fontSizePt: Double?,
+            val isBold: Boolean, val isItalic: Boolean, val isUnderline: Boolean
+        )
+    }
+
+    data class Rectangle(
+        val x: Double, val y: Double, val w: Double, val h: Double,
+        val bgColor: String?,
+        val cornerRadius: Double? = null
+    ) : SlideShape()
+
+    data class Ellipse(
+        val x: Double, val y: Double, val w: Double, val h: Double,
+        val bgColor: String?
+    ) : SlideShape()
+
+    data class Image(
+        val x: Double, val y: Double, val w: Double, val h: Double,
+        val imageFile: java.io.File,
+        val mimeType: String
+    ) : SlideShape()
+}
+
+
+/**
  * Unified data state that the rendering engine understands.
  */
 sealed class UnifiedDocumentState {
@@ -51,6 +90,16 @@ sealed class UnifiedDocumentState {
      * Represents an image document, storing its URI so it can be decoded into a Bitmap and drawn to the PDF.
      */
     data class ImageState(val uri: Uri) : UnifiedDocumentState()
+
+    /**
+     * Represents a paginated document consisting of distinct pages, each with its own shapes.
+     * Pages are emitted lazily.
+     */
+    data class PagedState(
+        val pages: Flow<List<SlideShape>>,
+        val pageWidthPx: Double,
+        val pageHeightPx: Double
+    ) : UnifiedDocumentState()
 }
 
 /**

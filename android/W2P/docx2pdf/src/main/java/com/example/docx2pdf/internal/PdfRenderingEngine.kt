@@ -12,6 +12,8 @@ import android.webkit.WebViewClient
 import android.util.Log
 import com.example.docx2pdf.parser.DocumentElement
 import com.example.docx2pdf.parser.UnifiedDocumentState
+import com.example.docx2pdf.parser.SlideShape
+import android.graphics.RectF
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -37,6 +39,7 @@ internal class PdfRenderingEngine(private val context: Context) {
             is UnifiedDocumentState.HtmlState -> renderHtmlToPdf(state.htmlContent, outputUri)
             is UnifiedDocumentState.StreamState -> renderStreamToPdf(state, outputUri)
             is UnifiedDocumentState.ImageState -> renderImageToPdf(state, outputUri)
+            is UnifiedDocumentState.PagedState -> renderPagedToPdf(state, outputUri)
             is UnifiedDocumentState.PdfState -> {
                 // Handled upstream in OfflineDocConverter
             }
@@ -188,6 +191,153 @@ internal class PdfRenderingEngine(private val context: Context) {
             }
 
             pdfDocument.finishPage(currentPage)
+
+            val outputStream = context.contentResolver.openOutputStream(outputUri)
+                ?: throw IllegalArgumentException("Could not open OutputStream for $outputUri")
+            
+            outputStream.use {
+                pdfDocument.writeTo(it)
+            }
+            pdfDocument.close()
+        }
+    }
+
+    
+    private suspend fun renderPagedToPdf(state: UnifiedDocumentState.PagedState, outputUri: Uri) {
+        withContext(Dispatchers.IO) {
+            val pdfDocument = PdfDocument()
+            val pageInfo = PdfDocument.PageInfo.Builder(A4_WIDTH, A4_HEIGHT, 1).create()
+
+            val scale = minOf(
+                A4_WIDTH / state.pageWidthPx.toFloat(),
+                A4_HEIGHT / state.pageHeightPx.toFloat()
+            )
+            val scaledWidth = state.pageWidthPx * scale
+            val scaledHeight = state.pageHeightPx * scale
+            val offsetX = (A4_WIDTH - scaledWidth) / 2f
+            val offsetY = (A4_HEIGHT - scaledHeight) / 2f
+
+            state.pages.collect { shapes ->
+                val page = pdfDocument.startPage(pageInfo)
+                val canvas = page.canvas
+
+                canvas.save()
+                canvas.translate(offsetX.toFloat(), offsetY.toFloat())
+                canvas.scale(scale.toFloat(), scale.toFloat())
+
+                for (shape in shapes) {
+                    when (shape) {
+                        is SlideShape.Rectangle -> {
+                            val paint = Paint().apply {
+                                if (shape.bgColor != null) {
+                                    color = android.graphics.Color.parseColor(shape.bgColor)
+                                    style = Paint.Style.FILL
+                                } else {
+                                    color = android.graphics.Color.TRANSPARENT
+                                }
+                            }
+                            if (paint.color != android.graphics.Color.TRANSPARENT) {
+                                val rectF = RectF(shape.x.toFloat(), shape.y.toFloat(), (shape.x + shape.w).toFloat(), (shape.y + shape.h).toFloat())
+                                if (shape.cornerRadius != null && shape.cornerRadius > 0) {
+                                    canvas.drawRoundRect(rectF, shape.cornerRadius.toFloat(), shape.cornerRadius.toFloat(), paint)
+                                } else {
+                                    canvas.drawRect(rectF, paint)
+                                }
+                            }
+                        }
+                        is SlideShape.Ellipse -> {
+                            val paint = Paint().apply {
+                                if (shape.bgColor != null) {
+                                    color = android.graphics.Color.parseColor(shape.bgColor)
+                                    style = Paint.Style.FILL
+                                } else {
+                                    color = android.graphics.Color.TRANSPARENT
+                                }
+                            }
+                            if (paint.color != android.graphics.Color.TRANSPARENT) {
+                                val rectF = RectF(shape.x.toFloat(), shape.y.toFloat(), (shape.x + shape.w).toFloat(), (shape.y + shape.h).toFloat())
+                                canvas.drawOval(rectF, paint)
+                            }
+                        }
+                        is SlideShape.Image -> {
+                            var bitmap: android.graphics.Bitmap? = null
+                            try {
+                                bitmap = android.graphics.BitmapFactory.decodeFile(shape.imageFile.absolutePath)
+                                if (bitmap != null) {
+                                    val src = android.graphics.Rect(0, 0, bitmap.width, bitmap.height)
+                                    val dst = RectF(shape.x.toFloat(), shape.y.toFloat(), (shape.x + shape.w).toFloat(), (shape.y + shape.h).toFloat())
+                                    canvas.drawBitmap(bitmap, src, dst, null)
+                                }
+                            } finally {
+                                bitmap?.recycle()
+                            }
+                        }
+                        is SlideShape.TextBlock -> {
+                            val spannable = android.text.SpannableStringBuilder()
+                            
+                            for (paragraph in shape.paragraphs) {
+                                val paraStart = spannable.length
+                                for (run in paragraph.runs) {
+                                    val start = spannable.length
+                                    spannable.append(run.text)
+                                    val end = spannable.length
+                                    
+                                    val color = if (run.color != null) android.graphics.Color.parseColor(run.color) else android.graphics.Color.BLACK
+                                    spannable.setSpan(android.text.style.ForegroundColorSpan(color), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                    
+                                    val fontSize = (run.fontSizePt?.toFloat() ?: 16f) * 1.33f // pts to px approx
+                                    spannable.setSpan(android.text.style.AbsoluteSizeSpan(fontSize.toInt(), false), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                    
+                                    var style = android.graphics.Typeface.NORMAL
+                                    if (run.isBold && run.isItalic) style = android.graphics.Typeface.BOLD_ITALIC
+                                    else if (run.isBold) style = android.graphics.Typeface.BOLD
+                                    else if (run.isItalic) style = android.graphics.Typeface.ITALIC
+                                    
+                                    if (style != android.graphics.Typeface.NORMAL) {
+                                        spannable.setSpan(android.text.style.StyleSpan(style), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                    }
+                                    
+                                    if (run.isUnderline) {
+                                        spannable.setSpan(android.text.style.UnderlineSpan(), start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                    }
+                                }
+                                
+                                val align = when (paragraph.align) {
+                                    "center" -> android.text.Layout.Alignment.ALIGN_CENTER
+                                    "right" -> android.text.Layout.Alignment.ALIGN_OPPOSITE
+                                    else -> android.text.Layout.Alignment.ALIGN_NORMAL
+                                }
+                                spannable.setSpan(android.text.style.AlignmentSpan.Standard(align), paraStart, spannable.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                
+                                if (paragraph !== shape.paragraphs.last()) {
+                                    spannable.append("\n")
+                                }
+                            }
+                            
+                            val textPaint = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG)
+                            textPaint.density = 1f
+                            
+                            val staticLayout = android.text.StaticLayout(
+                                spannable,
+                                textPaint,
+                                shape.w.toInt().coerceAtLeast(1),
+                                android.text.Layout.Alignment.ALIGN_NORMAL,
+                                1.2f, // line spacing multiplier
+                                0f,   // line spacing add
+                                true  // include pad
+                            )
+                            
+                            canvas.save()
+                            canvas.translate(shape.x.toFloat(), shape.y.toFloat())
+                            staticLayout.draw(canvas)
+                            canvas.restore()
+                        }
+                    }
+                }
+
+                canvas.restore()
+                pdfDocument.finishPage(page)
+            }
 
             val outputStream = context.contentResolver.openOutputStream(outputUri)
                 ?: throw IllegalArgumentException("Could not open OutputStream for $outputUri")

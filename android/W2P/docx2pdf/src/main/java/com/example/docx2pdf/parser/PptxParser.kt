@@ -1,43 +1,21 @@
 package com.example.docx2pdf.parser
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Base64
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.zip.ZipInputStream
 import kotlin.math.roundToInt
 
-/**
- * PPTX -> HTML parser.
- *
- * Key fixes vs the previous version:
- *  1. srgbClr/sysClr values were never actually captured ("#" with nothing appended) -> all colors lost.
- *  2. The slide wrapper had no `position: relative` + explicit width/height, so every absolutely
- *     positioned shape resolved against the page instead of its own slide -> slides bled into each other.
- *  3. Relationship files were read from a hardcoded, non-existent ".rels" path instead of
- *     "slideN.xml.rels" -> image/layout relationships were empty for (almost) every slide.
- *  4. Group shapes (grpSp/grpSpPr with chOff/chExt) were not handled at all, so any shape nested in a
- *     group used its local group-space coordinates as if they were slide coordinates.
- *  5. Placeholder shapes that omit their own off/ext (title/body placeholders almost always do this)
- *     were not resolved against the slide layout / slide master, so they collapsed to (0,0).
- *  6. Shapes were forced into a centered flex box regardless of the deck's actual text alignment.
- *  7. Images were always re-encoded as JPEG, destroying alpha on PNG logos/icons.
- */
 class PptxParser : DocumentParser {
 
-    // ---------- small data holders ----------
-
     private data class RelInfo(val type: String, val target: File)
-
     private data class ShapeGeom(val x: Double, val y: Double, val w: Double, val h: Double)
 
     private data class PhKey(val type: String?, val idx: String?) {
@@ -48,7 +26,6 @@ class PptxParser : DocumentParser {
         )
     }
 
-    /** Maps a child (group-local) coordinate space onto an already-resolved absolute-px rectangle. */
     private data class GroupTransform(
         val offX: Double, val offY: Double, val extW: Double, val extH: Double,
         val chOffX: Double, val chOffY: Double, val chExtW: Double, val chExtH: Double
@@ -70,6 +47,9 @@ class PptxParser : DocumentParser {
     override suspend fun parse(context: Context, inputUri: Uri): UnifiedDocumentState {
         return withContext(Dispatchers.IO) {
             val tempDir = File(context.cacheDir, "pptx_temp_${System.currentTimeMillis()}")
+            var slideWidthPx = 960.0
+            var slideHeightPx = 540.0
+            
             try {
                 tempDir.mkdirs()
                 extractZip(context, inputUri, tempDir)
@@ -77,12 +57,6 @@ class PptxParser : DocumentParser {
                 val factory = XmlPullParserFactory.newInstance()
                 factory.isNamespaceAware = true
 
-                val slidesDir = File(tempDir, "ppt/slides")
-                val slideRelsDir = File(tempDir, "ppt/slides/_rels")
-                val mediaDir = File(tempDir, "ppt/media")
-
-                var slideWidthPx = 960.0
-                var slideHeightPx = 540.0
                 val presFile = File(tempDir, "ppt/presentation.xml")
                 if (presFile.exists()) {
                     try {
@@ -104,6 +78,10 @@ class PptxParser : DocumentParser {
                     } catch (_: Exception) { }
                 }
 
+                val slidesDir = File(tempDir, "ppt/slides")
+                val slideRelsDir = File(tempDir, "ppt/slides/_rels")
+                val mediaDir = File(tempDir, "ppt/media")
+
                 val slideFiles = (slidesDir.listFiles { _, name -> name.startsWith("slide") && name.endsWith(".xml") }
                     ?: emptyArray()).sortedBy {
                     it.name.substringAfter("slide").substringBefore(".xml").toIntOrNull() ?: 0
@@ -111,84 +89,66 @@ class PptxParser : DocumentParser {
 
                 val themeColorMap = parseThemeColors(File(tempDir, "ppt/theme/theme1.xml"), factory)
 
-                val htmlBuilder = StringBuilder()
-                htmlBuilder.append("<html><head><meta charset='utf-8'><style>")
-                htmlBuilder.append("html,body { margin:0; padding:0; }")
-                htmlBuilder.append("body { font-family: 'Calibri', 'Arial', sans-serif; }")
-                htmlBuilder.append(".slide-page { page-break-after: always; display:flex; justify-content:center; background:#e6e6e6; padding: 12px 0; }")
-                htmlBuilder.append(".slide { position: relative; overflow: hidden; box-sizing: border-box; background-color: #FFFFFF; }")
-                htmlBuilder.append(".shape { position: absolute; overflow: hidden; box-sizing: border-box; padding: 2px 4px; }")
-                htmlBuilder.append(".text-block { margin: 2px 0; font-size: 16pt; line-height: 1.2; }")
-                htmlBuilder.append(".img-container { width:100%; height:100%; }")
-                htmlBuilder.append("img { display:block; width: 100%; height: 100%; object-fit: contain; }")
-                htmlBuilder.append("</style></head><body>")
+                val pagesFlow = flow {
+                    try {
+                        for (slideFile in slideFiles) {
+                            val slideRels = parseRels(File(slideRelsDir, slideFile.name + ".rels"), slideFile.parentFile ?: tempDir)
 
-                if (slideFiles.isEmpty()) {
-                    htmlBuilder.append("<p>No slides found.</p>")
-                }
+                            val layoutFile = findRelTarget(slideRels, "slideLayout")
+                            val layoutRels = layoutFile?.let {
+                                parseRels(File(it.parentFile, "_rels/${it.name}.rels"), it.parentFile ?: tempDir)
+                            } ?: emptyMap()
+                            val masterFile = layoutFile?.let { findRelTarget(layoutRels, "slideMaster") }
+                                ?: File(tempDir, "ppt/slideMasters/slideMaster1.xml").takeIf { it.exists() }
+                            val masterRels = masterFile?.let {
+                                parseRels(File(it.parentFile, "_rels/${it.name}.rels"), it.parentFile ?: tempDir)
+                            } ?: emptyMap()
 
-                for (slideFile in slideFiles) {
-                    val slideRels = parseRels(File(slideRelsDir, slideFile.name + ".rels"), slideFile.parentFile ?: tempDir)
+                            val masterPh = masterFile?.let { parsePlaceholderGeoms(it, factory) } ?: emptyMap()
+                            val layoutPh = layoutFile?.let { parsePlaceholderGeoms(it, factory) } ?: emptyMap()
+                            val inheritedPh = masterPh + layoutPh
 
-                    // Resolve slide -> layout -> master chain for this specific slide.
-                    val layoutFile = findRelTarget(slideRels, "slideLayout")
-                    val layoutRels = layoutFile?.let {
-                        parseRels(File(it.parentFile, "_rels/${it.name}.rels"), it.parentFile ?: tempDir)
-                    } ?: emptyMap()
-                    val masterFile = layoutFile?.let { findRelTarget(layoutRels, "slideMaster") }
-                        ?: File(tempDir, "ppt/slideMasters/slideMaster1.xml").takeIf { it.exists() }
-                    val masterRels = masterFile?.let {
-                        parseRels(File(it.parentFile, "_rels/${it.name}.rels"), it.parentFile ?: tempDir)
-                    } ?: emptyMap()
+                            var masterBgColor: String? = null
+                            var masterShapes = emptyList<SlideShape>()
+                            if (masterFile != null && masterFile.exists()) {
+                                val result = parseShapeTree(
+                                    FileInputStream(masterFile), factory, themeColorMap, masterRels, mediaDir,
+                                    inheritedPh = emptyMap(), slideW = slideWidthPx, slideH = slideHeightPx,
+                                    renderOnlyBackgroundShapes = true
+                                )
+                                masterShapes = result.shapes
+                                masterBgColor = result.bgColor
+                            }
 
-                    val masterPh = masterFile?.let { parsePlaceholderGeoms(it, factory) } ?: emptyMap()
-                    val layoutPh = layoutFile?.let { parsePlaceholderGeoms(it, factory) } ?: emptyMap()
-                    // Layout placeholder geometry should win over master; merge with layout taking priority.
-                    val inheritedPh = masterPh + layoutPh
+                            val slideResult = parseShapeTree(
+                                FileInputStream(slideFile), factory, themeColorMap, slideRels, mediaDir,
+                                inheritedPh = inheritedPh, slideW = slideWidthPx, slideH = slideHeightPx,
+                                renderOnlyBackgroundShapes = false
+                            )
 
-                    var masterBgColor: String? = null
-                    var masterHtml = ""
-                    if (masterFile != null && masterFile.exists()) {
-                        val result = parseShapeTree(
-                            FileInputStream(masterFile), factory, themeColorMap, masterRels, mediaDir,
-                            inheritedPh = emptyMap(), slideW = slideWidthPx, slideH = slideHeightPx,
-                            renderOnlyBackgroundShapes = true
-                        )
-                        masterHtml = result.html
-                        masterBgColor = result.bgColor
+                            val finalBg = slideResult.bgColor ?: masterBgColor ?: "#FFFFFF"
+
+                            val allShapes = mutableListOf<SlideShape>()
+                            allShapes.add(SlideShape.Rectangle(0.0, 0.0, slideWidthPx, slideHeightPx, bgColor = finalBg))
+                            allShapes.addAll(masterShapes)
+                            allShapes.addAll(slideResult.shapes)
+                            
+                            emit(allShapes.toList())
+                        }
+                    } finally {
+                        tempDir.deleteRecursively()
                     }
-
-                    val slideResult = parseShapeTree(
-                        FileInputStream(slideFile), factory, themeColorMap, slideRels, mediaDir,
-                        inheritedPh = inheritedPh, slideW = slideWidthPx, slideH = slideHeightPx,
-                        renderOnlyBackgroundShapes = false
-                    )
-
-                    val finalBg = slideResult.bgColor ?: masterBgColor ?: "#FFFFFF"
-
-                    htmlBuilder.append("<div class='slide-page'>")
-                    htmlBuilder.append(
-                        "<div class='slide' style='width:${px(slideWidthPx)}px; height:${px(slideHeightPx)}px; background-color:$finalBg;'>"
-                    )
-                    htmlBuilder.append(masterHtml)
-                    htmlBuilder.append(slideResult.html)
-                    htmlBuilder.append("</div></div>")
                 }
 
-                htmlBuilder.append("</body></html>")
-                UnifiedDocumentState.HtmlState(htmlBuilder.toString())
+                UnifiedDocumentState.PagedState(pagesFlow, slideWidthPx, slideHeightPx)
             } catch (e: Exception) {
                 e.printStackTrace()
-                UnifiedDocumentState.HtmlState("<html><body><p>Error parsing presentation: ${e.message ?: e.javaClass.simpleName}</p></body></html>")
-            } finally {
+                // In case of error before returning the flow, we must cleanup
                 tempDir.deleteRecursively()
+                throw e
             }
         }
     }
-
-    private fun px(v: Double): Int = v.roundToInt()
-
-    // ---------- zip extraction (zip-slip safe, unchanged behavior) ----------
 
     private fun extractZip(context: Context, inputUri: Uri, tempDir: File) {
         context.contentResolver.openInputStream(inputUri)?.use { stream ->
@@ -213,12 +173,6 @@ class PptxParser : DocumentParser {
         }
     }
 
-    // ---------- relationship (.rels) parsing, resolved per-file (fixes bug #3) ----------
-
-    /**
-     * @param relsFile the "_rels/<part>.rels" file for a specific part (e.g. slide3.xml.rels)
-     * @param partDir the directory containing the part itself (targets are resolved relative to this)
-     */
     private fun parseRels(relsFile: File, partDir: File): Map<String, RelInfo> {
         val map = mutableMapOf<String, RelInfo>()
         if (!relsFile.exists()) return map
@@ -251,8 +205,6 @@ class PptxParser : DocumentParser {
     private fun findRelTarget(rels: Map<String, RelInfo>, typeSuffix: String): File? =
         rels.values.firstOrNull { it.type.endsWith(typeSuffix) }?.target?.takeIf { it.exists() }
 
-    // ---------- theme colors (fixes bug #1) ----------
-
     private fun parseThemeColors(themeFile: File, factory: XmlPullParserFactory): Map<String, String> {
         val themeColorMap = mutableMapOf<String, String>()
         if (!themeFile.exists()) return themeColorMap
@@ -283,13 +235,9 @@ class PptxParser : DocumentParser {
                 }
                 tEvent = themeParser.next()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (_: Exception) {}
         return themeColorMap
     }
-
-    // ---------- placeholder geometry from layout/master (fixes bug #5) ----------
 
     private fun parsePlaceholderGeoms(file: File, factory: XmlPullParserFactory): Map<String, ShapeGeom> {
         val map = mutableMapOf<String, ShapeGeom>()
@@ -347,9 +295,7 @@ class PptxParser : DocumentParser {
         return null
     }
 
-    // ---------- slide/layout/master shape-tree parsing ----------
-
-    private data class ShapeTreeResult(val html: String, val bgColor: String?)
+    private data class ShapeTreeResult(val shapes: List<SlideShape>, val bgColor: String?)
 
     private fun parseShapeTree(
         inputStream: java.io.InputStream,
@@ -374,7 +320,6 @@ class PptxParser : DocumentParser {
 
         var slideBgColor: String? = null
 
-        // current shape state
         var shapeBgColor: String? = null
         var shapeType: String? = null
         var offX: Double? = null; var offY: Double? = null; var extW: Double? = null; var extH: Double? = null
@@ -391,9 +336,14 @@ class PptxParser : DocumentParser {
         var currentAlign: String? = null
 
         val groupStack = ArrayDeque<GroupTransform>()
-        val html = StringBuilder()
+        val shapes = mutableListOf<SlideShape>()
+        
+        var currentShapeGeom: ShapeGeom? = null
+        val currentParagraphs = mutableListOf<SlideShape.TextBlock.Paragraph>()
+        var currentImageFile: java.io.File? = null
+        var currentMimeType: String? = null
+        var currentRuns = mutableListOf<SlideShape.TextBlock.Run>()
 
-        // Resolves a (x,y,w,h) given in the current local coordinate space into absolute slide px.
         fun toAbs(x: Double, y: Double, w: Double, h: Double): ShapeGeom {
             return if (groupStack.isEmpty()) ShapeGeom(x, y, w, h) else groupStack.last().apply(x, y, w, h)
         }
@@ -456,6 +406,10 @@ class PptxParser : DocumentParser {
                             shapeBgColor = null; shapeType = null
                             offX = null; offY = null; extW = null; extH = null
                             phType = null; phIdx = null; hasText = false
+                            currentShapeGeom = null
+                            currentParagraphs.clear()
+                            currentImageFile = null
+                            currentMimeType = null
                         }
                         "grpSp" -> {
                             offX = null; offY = null; extW = null; extH = null
@@ -463,13 +417,16 @@ class PptxParser : DocumentParser {
                         }
                         "p" -> {
                             currentAlign = null
-                            html.append("<div class='text-block'>")
+                            currentRuns = mutableListOf()
                         }
                         "r" -> {
                             isBold = false; isItalic = false; isUnderline = false
                             currentTextColor = null; currentFontPt = null
                         }
-                        "br" -> html.append("<br/>")
+                        "br" -> {
+                            currentParagraphs.add(SlideShape.TextBlock.Paragraph(currentRuns.toList(), currentAlign))
+                            currentRuns = mutableListOf()
+                        }
                         "rPr" -> {
                             for (i in 0 until parser.attributeCount) {
                                 when (parser.getAttributeName(i)) {
@@ -493,15 +450,14 @@ class PptxParser : DocumentParser {
                         "t" -> {
                             hasText = true
                             val text = parser.nextText()
-                            var styled = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                            val styles = StringBuilder()
-                            if (currentTextColor != null) styles.append("color:$currentTextColor;")
-                            if (currentFontPt != null) styles.append("font-size:${currentFontPt}pt;")
-                            if (isUnderline) styles.append("text-decoration:underline;")
-                            if (styles.isNotEmpty()) styled = "<span style='$styles'>$styled</span>"
-                            if (isBold) styled = "<b>$styled</b>"
-                            if (isItalic) styled = "<i>$styled</i>"
-                            html.append(styled)
+                            currentRuns.add(SlideShape.TextBlock.Run(
+                                text = text,
+                                color = currentTextColor,
+                                fontSizePt = currentFontPt,
+                                isBold = isBold,
+                                isItalic = isItalic,
+                                isUnderline = isUnderline
+                            ))
                         }
                         "blip" -> {
                             var embedId: String? = null
@@ -513,15 +469,11 @@ class PptxParser : DocumentParser {
                             }
                             val target = embedId?.let { rels[it]?.target }
                             if (target != null && target.exists()) {
-                                val encoded = downsampleImageToBase64(target)
-                                if (encoded != null) {
-                                    html.append(
-                                        "<div class='img-container'><img src='data:${encoded.first};base64,${encoded.second}' /></div>"
-                                    )
-                                }
+                                val isPng = target.extension.lowercase() in setOf("png", "gif", "bmp")
+                                currentMimeType = if (isPng) "image/png" else "image/jpeg"
+                                currentImageFile = target
                             }
                         }
-                        else -> { /* no-op, keep exhaustive-ish */ }
                     }
                 }
                 XmlPullParser.END_TAG -> {
@@ -529,8 +481,6 @@ class PptxParser : DocumentParser {
                         "bg" -> inBg = false
                         "grpSpPr" -> {
                             inGrpSpPr = false
-                            // Resolve this group's own box in the *current* (outer) coordinate space,
-                            // then push a transform mapping its child space onto that resolved box.
                             val geom = toAbs(offX ?: 0.0, offY ?: 0.0, extW ?: slideW, extH ?: slideH)
                             groupStack.addLast(
                                 GroupTransform(
@@ -548,74 +498,60 @@ class PptxParser : DocumentParser {
                             } else null
 
                             if (geom == null) {
-                                // Inherit position/size from the layout, then the master, for placeholders
-                                // that don't override their own geometry (this is the common case for
-                                // title/body/subtitle placeholders).
                                 lookupInherited(inheritedPh, phType, phIdx)?.let { geom = it }
                             }
+                            currentShapeGeom = geom
 
                             val skip = renderOnlyBackgroundShapes && (phType != null || phIdx != null) && !hasText
-                            if (!skip) {
-                                val style = StringBuilder()
-                                if (shapeBgColor != null) style.append("background-color:$shapeBgColor;")
-                                if (shapeType == "ellipse") style.append("border-radius:50%;")
-                                else if (shapeType == "roundRect") style.append("border-radius:12px;")
-                                geom?.let {
-                                    style.append("left:${px(it.x)}px;top:${px(it.y)}px;width:${px(it.w)}px;height:${px(it.h)}px;")
+                            if (!skip && geom != null) {
+                                if (shapeType == "ellipse") {
+                                    shapes.add(SlideShape.Ellipse(geom!!.x, geom!!.y, geom!!.w, geom!!.h, shapeBgColor))
+                                } else if (shapeType == "roundRect") {
+                                    shapes.add(SlideShape.Rectangle(geom!!.x, geom!!.y, geom!!.w, geom!!.h, shapeBgColor, 12.0))
+                                } else if (shapeBgColor != null) {
+                                    shapes.add(SlideShape.Rectangle(geom!!.x, geom!!.y, geom!!.w, geom!!.h, shapeBgColor, null))
                                 }
-                                if (currentAlign != null) style.append("text-align:$currentAlign;")
-                                html.append("<div class='shape' style='$style'>")
-                            } else {
-                                html.append("<!--placeholder-skip-->")
                             }
                         }
-                        "sp", "pic", "cxnSp" -> {
-                            val skip = renderOnlyBackgroundShapes && (phType != null || phIdx != null) && !hasText
-                            html.append(if (skip) "" else "</div>")
+                        "p" -> {
+                            if (currentRuns.isNotEmpty()) {
+                                currentParagraphs.add(SlideShape.TextBlock.Paragraph(currentRuns.toList(), currentAlign))
+                                currentRuns = mutableListOf()
+                            }
                         }
-                        "graphicFrame" -> html.append("</div>")
+                        "sp" -> {
+                            val skip = renderOnlyBackgroundShapes && (phType != null || phIdx != null) && !hasText
+                            if (!skip && currentShapeGeom != null && currentParagraphs.isNotEmpty()) {
+                                shapes.add(SlideShape.TextBlock(
+                                    x = currentShapeGeom!!.x, y = currentShapeGeom!!.y,
+                                    w = currentShapeGeom!!.w, h = currentShapeGeom!!.h,
+                                    paragraphs = currentParagraphs.toList()
+                                ))
+                            }
+                            currentParagraphs.clear()
+                        }
+                        "pic" -> {
+                            val skip = renderOnlyBackgroundShapes && (phType != null || phIdx != null) && !hasText
+                            if (!skip && currentShapeGeom != null && currentImageFile != null && currentMimeType != null) {
+                                shapes.add(SlideShape.Image(
+                                    x = currentShapeGeom!!.x, y = currentShapeGeom!!.y,
+                                    w = currentShapeGeom!!.w, h = currentShapeGeom!!.h,
+                                    imageFile = currentImageFile!!,
+                                    mimeType = currentMimeType!!
+                                ))
+                            }
+                            currentImageFile = null
+                            currentMimeType = null
+                        }
                         "grpSp" -> if (groupStack.isNotEmpty()) groupStack.removeLast()
                         "rPr", "defRPr" -> inRPr = false
                         "pPr" -> inPPr = false
-                        "p" -> html.append("</div>")
                     }
                 }
             }
-            // nextText() already advances past the end tag of "t"; avoid double-advancing.
             event = if (event == XmlPullParser.START_TAG && parser.name == "t") parser.eventType else parser.next()
         }
-        return ShapeTreeResult(html.toString(), slideBgColor)
-    }
-
-    // ---------- image handling (keeps alpha for PNG, fixes bug #7) ----------
-
-    private fun downsampleImageToBase64(file: File): Pair<String, String>? {
-        val isPng = file.extension.lowercase() in setOf("png", "gif", "bmp")
-        val format = if (isPng) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG
-        val mime = if (isPng) "image/png" else "image/jpeg"
-
-        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.absolutePath, options)
-        if (options.outWidth <= 0 || options.outHeight <= 0) return null // unsupported (e.g. WMF/EMF)
-
-        val reqWidth = 1600
-        val reqHeight = 1600
-        var inSampleSize = 1
-        if (options.outHeight > reqHeight || options.outWidth > reqWidth) {
-            val halfHeight = options.outHeight / 2
-            val halfWidth = options.outWidth / 2
-            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-
-        val decodeOptions = BitmapFactory.Options().apply { this.inSampleSize = inSampleSize }
-        val bitmap = BitmapFactory.decodeFile(file.absolutePath, decodeOptions) ?: return null
-        val outputStream = ByteArrayOutputStream()
-        bitmap.compress(format, if (isPng) 100 else 85, outputStream)
-        val bytes = outputStream.toByteArray()
-        bitmap.recycle()
-        return mime to Base64.encodeToString(bytes, Base64.NO_WRAP)
+        return ShapeTreeResult(shapes, slideBgColor)
     }
 
     private fun resolveThemeColor(scheme: String): String? = when (scheme) {

@@ -5,8 +5,6 @@ import {
   View,
   TouchableOpacity,
   Switch,
-  Image,
-  ImageSourcePropType,
   StyleProp,
   ViewStyle,
   ImageStyle,
@@ -50,7 +48,13 @@ const SettingItem: React.FC<SettingItemProps> = ({
     <View style={[styles.card, style]} testID={testID}>
       {/* Left Icon */}
       <View style={styles.iconContainer}>
-        <Icon width="100%" height="100%" style={styles.leftIcon as any} {...(StyleSheet.flatten(iconStyle) as any)} color={colors.icon} />
+        <Icon
+          width="100%"
+          height="100%"
+          style={styles.leftIcon as any}
+          {...(StyleSheet.flatten(iconStyle) as any)}
+          color={colors.icon}
+        />
       </View>
 
       {/* Title */}
@@ -108,55 +112,56 @@ const SettingItem: React.FC<SettingItemProps> = ({
     </TouchableOpacity>
   );
 };
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 32,
-    minHeight: 64,
-    paddingVertical: 14,
-    paddingHorizontal: 22,
-    marginVertical: 7,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  iconContainer: {
-    width: 28,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  leftIcon: {
-    width: 24,
-    height: 24,
-    tintColor: colors.icon,
-  },
-  title: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    marginLeft: 18,
-  },
-  switch: {
-    transform: [{ scaleX: 0.95 }, { scaleY: 0.95 }],
-  },
-  chevronContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chevronIcon: {
-    width: 14,
-    height: 14,
-    tintColor: colors.icon,
-    transform: [{ rotate: '180deg' }],
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 32,
+      minHeight: 64,
+      paddingVertical: 14,
+      paddingHorizontal: 22,
+      marginVertical: 7,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    iconContainer: {
+      width: 28,
+      height: 28,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    leftIcon: {
+      width: 24,
+      height: 24,
+      tintColor: colors.icon,
+    },
+    title: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginLeft: 18,
+    },
+    switch: {
+      transform: [{ scaleX: 0.95 }, { scaleY: 0.95 }],
+    },
+    chevronContainer: {
+      width: 24,
+      height: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    chevronIcon: {
+      width: 14,
+      height: 14,
+      tintColor: colors.icon,
+      transform: [{ rotate: '180deg' }],
+    },
+  });
 
 export default SettingItem;

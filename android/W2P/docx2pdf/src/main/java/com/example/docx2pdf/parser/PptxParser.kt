@@ -317,6 +317,14 @@ class PptxParser : DocumentParser {
         var inGrpSpPr = false
         var inRPr = false
         var inPPr = false
+        var inDefRPr = false
+        var inStyle = false
+        
+        var defFontPt: Double? = null
+        var defTextColor: String? = null
+        var defIsBold = false
+        var defIsItalic = false
+        var defIsUnderline = false
 
         var slideBgColor: String? = null
 
@@ -355,8 +363,7 @@ class PptxParser : DocumentParser {
                         "bg" -> inBg = true
                         "spPr" -> inSpPr = true
                         "grpSpPr" -> inGrpSpPr = true
-                        "rPr", "defRPr" -> inRPr = true
-                        "pPr" -> inPPr = true
+                        "style" -> inStyle = true
                         "ph" -> {
                             phType = parser.getAttributeValue(null, "type")
                             phIdx = parser.getAttributeValue(null, "idx")
@@ -366,7 +373,8 @@ class PptxParser : DocumentParser {
                                 val hex = "#$v"
                                 if (inBg) slideBgColor = hex
                                 else if (inRPr) currentTextColor = hex
-                                else if (inSpPr) shapeBgColor = hex
+                                else if (inDefRPr) defTextColor = hex
+                                else if (inSpPr || inStyle) shapeBgColor = hex
                             }
                         }
                         "schemeClr" -> {
@@ -375,7 +383,8 @@ class PptxParser : DocumentParser {
                                 if (resolved != null) {
                                     if (inBg) slideBgColor = resolved
                                     else if (inRPr) currentTextColor = resolved
-                                    else if (inSpPr) shapeBgColor = resolved
+                                    else if (inDefRPr) defTextColor = resolved
+                                    else if (inSpPr || inStyle) shapeBgColor = resolved
                                 }
                             }
                         }
@@ -418,16 +427,22 @@ class PptxParser : DocumentParser {
                         "p" -> {
                             currentAlign = null
                             currentRuns = mutableListOf()
+                            defFontPt = null
+                            defTextColor = null
+                            defIsBold = false
+                            defIsItalic = false
+                            defIsUnderline = false
                         }
                         "r" -> {
-                            isBold = false; isItalic = false; isUnderline = false
-                            currentTextColor = null; currentFontPt = null
+                            isBold = defIsBold; isItalic = defIsItalic; isUnderline = defIsUnderline
+                            currentTextColor = defTextColor; currentFontPt = defFontPt
                         }
                         "br" -> {
                             currentParagraphs.add(SlideShape.TextBlock.Paragraph(currentRuns.toList(), currentAlign))
                             currentRuns = mutableListOf()
                         }
                         "rPr" -> {
+                            inRPr = true
                             for (i in 0 until parser.attributeCount) {
                                 when (parser.getAttributeName(i)) {
                                     "b" -> if (parser.getAttributeValue(i) == "1") isBold = true
@@ -437,7 +452,19 @@ class PptxParser : DocumentParser {
                                 }
                             }
                         }
+                        "defRPr" -> {
+                            inDefRPr = true
+                            for (i in 0 until parser.attributeCount) {
+                                when (parser.getAttributeName(i)) {
+                                    "b" -> if (parser.getAttributeValue(i) == "1") defIsBold = true
+                                    "i" -> if (parser.getAttributeValue(i) == "1") defIsItalic = true
+                                    "u" -> if (parser.getAttributeValue(i) != "none") defIsUnderline = true
+                                    "sz" -> parser.getAttributeValue(i).toIntOrNull()?.let { defFontPt = it / 100.0 }
+                                }
+                            }
+                        }
                         "pPr" -> {
+                            inPPr = true
                             parser.getAttributeValue(null, "algn")?.let { a ->
                                 currentAlign = when (a) {
                                     "ctr" -> "center"
@@ -544,8 +571,10 @@ class PptxParser : DocumentParser {
                             currentMimeType = null
                         }
                         "grpSp" -> if (groupStack.isNotEmpty()) groupStack.removeLast()
-                        "rPr", "defRPr" -> inRPr = false
+                        "rPr" -> inRPr = false
+                        "defRPr" -> inDefRPr = false
                         "pPr" -> inPPr = false
+                        "style" -> inStyle = false
                     }
                 }
             }

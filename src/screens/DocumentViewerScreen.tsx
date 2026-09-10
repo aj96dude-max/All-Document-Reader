@@ -34,6 +34,7 @@ import ConvertToPdfModal from '../components/viewer/ConvertToPdfModal';
 import DocumentHeader from '../components/viewer/DocumentHeader';
 import DocumentBottomToolbar from '../components/viewer/DocumentBottomToolbar';
 import JumpToPageModal from '../components/viewer/JumpToPageModal';
+import RenameModal from '../components/viewer/RenameModal';
 import PageIndicator from '../components/viewer/PageIndicator';
 import TextDocumentViewer from '../components/viewer/TextDocumentViewer';
 import { useTheme } from '../theme/ThemeContext';
@@ -68,6 +69,8 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   // Modal states
   const [isJumpModalVisible, setIsJumpModalVisible] = useState<boolean>(false);
   const [isAlreadyPdfModalVisible, setIsAlreadyPdfModalVisible] = useState<boolean>(false);
+  const [isRenameModalVisible, setIsRenameModalVisible] = useState<boolean>(false);
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
   
   // Manual Conversion Modal states
   const [isConvertModalVisible, setIsConvertModalVisible] = useState<boolean>(false);
@@ -207,28 +210,30 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
     pdfRef.current?.setPage(pageNumber);
   };
 
-  // Delete document
-  const handleDelete = () => {
-    Alert.alert(
-      'Move to Trash',
-      `Move "${fileName}" to Trash? It will be automatically deleted after 30 days.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Move to Trash',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await moveToTrash(currentFile);
-              navigation.goBack();
-            } catch (err: any) {
-              console.error('Move to trash error:', err);
-              Alert.alert('Error', err?.message || 'Could not move file to trash');
-            }
-          },
-        },
-      ]
-    );
+  // Rename document
+  const handleRenameSubmit = async (newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      Alert.alert('Invalid Name', 'Document name cannot be empty');
+      return;
+    }
+    try {
+      setIsRenaming(true);
+      const oldUri = currentFile.uri;
+      const updated = await renameFile(oldUri, trimmed);
+      if (isFavorite) {
+        await updateFavoriteFile(oldUri, updated);
+      }
+      await updateRecentDocument(oldUri, updated);
+      setCurrentFile(updated);
+      setFileName(updated.name);
+      setIsRenameModalVisible(false);
+    } catch (err: any) {
+      console.error('Rename error:', err);
+      Alert.alert('Rename Failed', err?.message || 'Could not rename file');
+    } finally {
+      setIsRenaming(false);
+    }
   };
 
   // Convert to PDF manually
@@ -394,9 +399,9 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
           <DocumentBottomToolbar
             isFavorite={isFavorite}
             bottomInset={insets.bottom}
+            onRename={() => setIsRenameModalVisible(true)}
             onConvert={handleToolbarConvert}
             onToggleFavorite={handleToggleFavorite}
-            onDelete={handleDelete}
             onJumpToPage={() => setIsJumpModalVisible(true)}
           />
         </View>
@@ -410,6 +415,15 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
         bottomInset={insets.bottom}
         onClose={() => setIsJumpModalVisible(false)}
         onJump={handleJumpToPage}
+      />
+
+      {/* Rename Modal Component */}
+      <RenameModal
+        visible={isRenameModalVisible}
+        initialName={currentFile.name.replace(/\.[^/.]+$/, '') || currentFile.name}
+        isRenaming={isRenaming}
+        onClose={() => setIsRenameModalVisible(false)}
+        onSave={handleRenameSubmit}
       />
 
       <AlreadyPdfModal

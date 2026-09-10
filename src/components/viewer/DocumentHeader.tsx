@@ -44,33 +44,18 @@ const DocumentHeader: React.FC<DocumentHeaderProps> = ({
         {title}
       </Text>
 
-      {isPdf ? (
-        <TouchableOpacity
-          style={styles.headerIconBtn}
-          onPress={onShare}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          activeOpacity={0.7}
-        >
-          <ShareIcon
-            width={22}
-            height={22}
-            style={styles.headerShareIcon as any}
-          />
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          style={styles.headerIconBtn}
-          onPress={onConvert}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          activeOpacity={0.7}
-        >
-          <PdfIcon
-            width={22}
-            height={22}
-            style={styles.headerShareIcon as any}
-          />
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        style={styles.headerIconBtn}
+        onPress={onShare}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        activeOpacity={0.7}
+      >
+        <ShareIcon
+          width={22}
+          height={22}
+          style={styles.headerShareIcon as any}
+        />
+      </TouchableOpacity>
     </View>
   );
 };

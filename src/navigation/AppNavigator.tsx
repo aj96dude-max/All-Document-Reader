@@ -17,6 +17,7 @@ import SideMenu from '../components/SideMenu';
 import CustomHeader from '../components/CustomHeader';
 import { RootStackParamList } from '../types/types';
 import { useTheme } from '../theme/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeIcon from '../../Assets/svgicons/home.svg';
 import HomeActiveIcon from '../../Assets/svgicons/home_active.svg';
@@ -36,7 +37,7 @@ type MainTabsProps = {
 
 const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
   const { colors } = useTheme();
-
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -45,6 +46,8 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
         tabBarStyle: {
           backgroundColor: colors.surfaceElevated,
           borderTopColor: colors.border,
+          height: 58 + insets.bottom,
+          paddingBottom: insets.bottom,
         },
         tabBarButton: props => (
           <TouchableOpacity {...props} activeOpacity={0.8} />
@@ -99,7 +102,11 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
           ),
           tabBarIcon: ({ size, focused, color }) =>
             focused ? (
-              <StorageActiveIcon width={size} height={size} color={color} />
+              <StorageActiveIcon
+                width={size}
+                height={size}
+                color={colors.icon}
+              />
             ) : (
               <StorageIcon width={size} height={size} color={color} />
             ),

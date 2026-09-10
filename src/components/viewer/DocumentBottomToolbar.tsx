@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 
-import BorderColorIcon from '../../../Assets/svgicons/border_color.svg';
 import HeartMinusIcon from '../../../Assets/svgicons/favorite_active.svg';
 import FavoriteIcon from '../../../Assets/svgicons/un_favorite.svg';
 import DeleteForeverIcon from '../../../Assets/svgicons/delete_forever.svg';
 import SearchIcon from '../../../Assets/svgicons/search_bold.svg';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import PdfIcon from '../../../Assets/svgicons/black_picture_as_pdf.svg';
+
 import { useTheme } from '../../theme/ThemeContext';
 import { ColorPalette } from '../../theme/colors';
 
 interface DocumentBottomToolbarProps {
   isFavorite: boolean;
   bottomInset: number;
-  onRename: () => void;
+  onConvert: () => void;
   onToggleFavorite: () => void;
   onDelete: () => void;
   onJumpToPage: () => void;
@@ -22,7 +23,7 @@ interface DocumentBottomToolbarProps {
 const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
   isFavorite,
   bottomInset,
-  onRename,
+  onConvert,
   onToggleFavorite,
   onDelete,
   onJumpToPage,
@@ -41,15 +42,11 @@ const DocumentBottomToolbar: React.FC<DocumentBottomToolbarProps> = ({
       >
         <TouchableOpacity
           style={styles.toolbarItem}
-          onPress={onRename}
+          onPress={onConvert}
           activeOpacity={0.7}
         >
-          <BorderColorIcon
-            width={22}
-            height={22}
-            style={styles.toolbarIcon as any}
-          />
-          <Text style={styles.toolbarLabel}>Rename</Text>
+          <PdfIcon width={22} height={22} style={styles.toolbarIcon as any} />
+          <Text style={styles.toolbarLabel}>Convert to PDF</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

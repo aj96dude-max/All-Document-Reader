@@ -47,7 +47,7 @@ function getCacheKey(uri: string, fileName: string): string {
     hash = hash & hash; // Convert to 32-bit integer
   }
   const baseName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-  return `${baseName}_${Math.abs(hash)}_v3`;
+  return `${baseName}_${Math.abs(hash)}_v5`;
 }
 
 /**

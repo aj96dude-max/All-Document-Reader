@@ -32,6 +32,7 @@ internal class PdfRenderingEngine(private val context: Context) {
         private const val A4_WIDTH = 794 // 96 DPI A4 width
         private const val A4_HEIGHT = 1123 // 96 DPI A4 height
         private const val MARGIN = 40f
+        private const val PDF_MARGIN = 50f
     }
 
     suspend fun process(state: UnifiedDocumentState, outputUri: Uri) {
@@ -349,87 +350,229 @@ internal class PdfRenderingEngine(private val context: Context) {
         }
     }
 
-    private suspend fun renderHtmlToPdf(htmlContent: String, outputUri: Uri) {
-        withContext(Dispatchers.Main) {
-            // Must be called before any WebView is created to allow capturing the whole document
-            try {
-                WebView.enableSlowWholeDocumentDraw()
-            } catch (e: Exception) {
-                Log.w(TAG, "WebView.enableSlowWholeDocumentDraw() failed, continuing", e)
+private suspend fun renderHtmlToPdf(
+    htmlContent: String,
+    outputUri: Uri
+) {
+    withContext(Dispatchers.Main) {
+
+        try {
+            WebView.enableSlowWholeDocumentDraw()
+        } catch (e: Exception) {
+            Log.w(
+                TAG,
+                "WebView.enableSlowWholeDocumentDraw() failed",
+                e
+            )
+        }
+
+        suspendCancellableCoroutine<Unit> { continuation ->
+
+            val activity = context as? android.app.Activity
+                ?: throw IllegalStateException(
+                    "PdfRenderingEngine requires an Activity context."
+                )
+
+            val webView = WebView(activity)
+
+            val rootView =
+                activity.window.decorView.findViewById<android.view.ViewGroup>(
+                    android.R.id.content
+                )
+
+            // ==========================================
+            // MARGINS
+            // ==========================================
+
+            val leftMargin = 10f
+            val rightMargin = 10f
+            val topMargin = 50f
+            val bottomMargin = 50f
+
+            // ==========================================
+            // USABLE PDF AREA
+            // ==========================================
+
+            val contentWidth =
+                A4_WIDTH - leftMargin - rightMargin
+
+            val contentHeight =
+                A4_HEIGHT - topMargin - bottomMargin
+
+            // WebView width is only the usable width.
+            val layoutParams = android.view.ViewGroup.LayoutParams(
+                contentWidth.toInt(),
+                contentHeight.toInt()
+            )
+
+            webView.layoutParams = layoutParams
+
+            webView.alpha = 0.01f
+
+            rootView.addView(webView)
+
+            webView.settings.apply {
+                javaScriptEnabled = false
+                loadWithOverviewMode = true
+                useWideViewPort = true
             }
 
-            suspendCancellableCoroutine<Unit> { continuation ->
-                val activity = context as? android.app.Activity
-                    ?: throw IllegalStateException("PdfRenderingEngine requires an Activity context to render HTML layouts.")
+            webView.webViewClient = object : WebViewClient() {
 
-                val webView = WebView(activity)
-                val rootView = activity.window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
+                override fun onPageFinished(
+                    view: WebView,
+                    url: String
+                ) {
+                    super.onPageFinished(view, url)
 
-                val layoutParams = android.view.ViewGroup.LayoutParams(A4_WIDTH, A4_HEIGHT)
-                webView.layoutParams = layoutParams
-                webView.alpha = 0.01f // Almost invisible, but > 0 to guarantee hardware render
+                    view.postDelayed({
 
-                rootView.addView(webView)
+                        try {
 
-                webView.settings.apply {
-                    javaScriptEnabled = false
-                    loadWithOverviewMode = true
-                    useWideViewPort = true
-                }
+                            // ==========================================
+                            // MEASURE HTML
+                            // ==========================================
 
-                webView.webViewClient = object : WebViewClient() {
-                    override fun onPageFinished(view: WebView, url: String) {
-                        super.onPageFinished(view, url)
-                        view.postDelayed({
-                            try {
-                                val widthSpec = android.view.View.MeasureSpec.makeMeasureSpec(A4_WIDTH, android.view.View.MeasureSpec.EXACTLY)
-                                val heightSpec = android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED)
+                            val widthSpec =
+                                android.view.View.MeasureSpec.makeMeasureSpec(
+                                    contentWidth.toInt(),
+                                    android.view.View.MeasureSpec.EXACTLY
+                                )
 
-                                view.measure(widthSpec, heightSpec)
-                                val contentHeight = view.measuredHeight
-                                view.layout(0, 0, A4_WIDTH, contentHeight)
+                            val heightSpec =
+                                android.view.View.MeasureSpec.makeMeasureSpec(
+                                    0,
+                                    android.view.View.MeasureSpec.UNSPECIFIED
+                                )
 
-                                val pdfDocument = PdfDocument()
-                                val pageInfo = PdfDocument.PageInfo.Builder(A4_WIDTH, A4_HEIGHT, 1).create()
+                            view.measure(
+                                widthSpec,
+                                heightSpec
+                            )
 
-                                var yOffset = 0
-                                while (yOffset < contentHeight) {
-                                    val page = pdfDocument.startPage(pageInfo)
-                                    val canvas = page.canvas
+                            val totalContentHeight =
+                                view.measuredHeight
 
-                                    canvas.save()
-                                    canvas.translate(0f, -yOffset.toFloat())
-                                    view.draw(canvas)
-                                    canvas.restore()
-                                    pdfDocument.finishPage(page)
+                            view.layout(
+                                0,
+                                0,
+                                contentWidth.toInt(),
+                                totalContentHeight
+                            )
 
-                                    yOffset += A4_HEIGHT
-                                }
+                            // ==========================================
+                            // CREATE PDF
+                            // ==========================================
 
-                                val outputStream = context.contentResolver.openOutputStream(outputUri)
-                                    ?: throw IllegalArgumentException("Could not open OutputStream for $outputUri")
+                            val pdfDocument = PdfDocument()
 
-                                pdfDocument.writeTo(outputStream)
-                                outputStream.close()
-                                pdfDocument.close()
+                            val pageInfo =
+                                PdfDocument.PageInfo.Builder(
+                                    A4_WIDTH,
+                                    A4_HEIGHT,
+                                    1
+                                ).create()
 
-                                rootView.removeView(webView)
-                                continuation.resume(Unit)
-                            } catch (e: Exception) {
-                                rootView.removeView(webView)
-                                continuation.resumeWithException(e)
+                            // IMPORTANT:
+                            // Only this much HTML can fit on one page.
+                            val pageContentHeight =
+                                contentHeight.toInt()
+
+                            var contentOffset = 0
+
+                            while (
+                                contentOffset < totalContentHeight
+                            ) {
+
+                                val page =
+                                    pdfDocument.startPage(pageInfo)
+
+                                val canvas = page.canvas
+
+                                canvas.save()
+
+                                // ======================================
+                                // POSITION HTML INSIDE ALL 4 MARGINS
+                                // ======================================
+
+                                canvas.translate(
+                                    leftMargin,
+                                    topMargin - contentOffset
+                                )
+
+                                // ======================================
+                                // CLIP TO THIS PAGE'S CONTENT SLICE
+                                // This is what actually enforces the
+                                // margins — without it, content bleeds
+                                // past contentWidth/contentHeight and
+                                // pages can show overlapping slices.
+                                // ======================================
+
+                                canvas.clipRect(
+                                    0f,
+                                    contentOffset.toFloat(),
+                                    contentWidth,
+                                    contentOffset.toFloat() + contentHeight
+                                )
+
+                                // Draw HTML
+                                view.draw(canvas)
+
+                                canvas.restore()
+
+                                pdfDocument.finishPage(page)
+
+                                // Move only by the usable content height
+                                contentOffset += pageContentHeight
                             }
-                        }, 1500)
-                    }
-                }
 
-                webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                            // ==========================================
+                            // WRITE PDF
+                            // ==========================================
 
-                continuation.invokeOnCancellation {
-                    rootView.removeView(webView)
-                    webView.destroy()
+                            val outputStream =
+                                context.contentResolver
+                                    .openOutputStream(outputUri)
+                                    ?: throw IllegalArgumentException(
+                                        "Could not open OutputStream for $outputUri"
+                                    )
+
+                            outputStream.use {
+                                pdfDocument.writeTo(it)
+                            }
+
+                            pdfDocument.close()
+
+                            rootView.removeView(webView)
+
+                            continuation.resume(Unit)
+
+                        } catch (e: Exception) {
+
+                            rootView.removeView(webView)
+
+                            continuation.resumeWithException(e)
+                        }
+
+                    }, 1500)
                 }
+            }
+
+            webView.loadDataWithBaseURL(
+                null,
+                htmlContent,
+                "text/html",
+                "UTF-8",
+                null
+            )
+
+            continuation.invokeOnCancellation {
+
+                rootView.removeView(webView)
+                webView.destroy()
             }
         }
     }
+}
+
 }

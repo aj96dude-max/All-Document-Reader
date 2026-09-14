@@ -31,8 +31,85 @@ internal class PdfRenderingEngine(private val context: Context) {
         // A4 dimensions at standard 72 DPI scale for PDFDocument (595 x 842)
         private const val A4_WIDTH = 794 // 96 DPI A4 width
         private const val A4_HEIGHT = 1123 // 96 DPI A4 height
-        private const val MARGIN = 40f
+        private const val MARGIN = 50f
         private const val PDF_MARGIN = 50f
+
+        // JavaScript to measure Y-positions of all block-level elements.
+        // Used by smart pagination to avoid cutting text lines at page breaks.
+        private const val ELEMENT_BOUNDARY_JS = """(function() {
+            var els = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, tr, li, pre, blockquote, img');
+            var r = [];
+            for (var i = 0; i < els.length; i++) {
+                var rect = els[i].getBoundingClientRect();
+                r.push(Math.round(rect.top + window.scrollY) + ',' + Math.round(rect.bottom + window.scrollY));
+            }
+            var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, document.body.offsetHeight, document.documentElement.offsetHeight, document.body.clientHeight, document.documentElement.clientHeight);
+            return h + '|' + r.join(';');
+        })()"""
+    }
+
+    /**
+     * Represents the vertical boundaries of a rendered HTML block element.
+     */
+    private data class ElementBoundary(val top: Int, val bottom: Int)
+
+    /**
+     * Parses the JSON-encoded string returned by [ELEMENT_BOUNDARY_JS].
+     * Format: "top1,bottom1;top2,bottom2;..."
+     */
+    private fun parseElementBoundaries(boundariesStr: String, scale: Float): List<ElementBoundary> {
+        if (boundariesStr.isBlank()) return emptyList()
+        return boundariesStr.split(";").mapNotNull { pair ->
+            val parts = pair.split(",")
+            if (parts.size == 2) {
+                val top = (parts[0].toFloatOrNull() ?: 0f) * scale
+                val bottom = (parts[1].toFloatOrNull() ?: 0f) * scale
+                if (bottom > top) {
+                    ElementBoundary(top.toInt(), bottom.toInt())
+                } else null
+            } else null
+        }.sortedBy { it.top }
+    }
+
+    /**
+     * Finds the best page break point that avoids cutting through an element.
+     *
+     * Scans through [boundaries] to find elements that straddle [idealBottom].
+     * If one is found, the break is moved to just before that element's top.
+     * If the element is taller than a full page, the cut is accepted (unavoidable).
+     *
+     * @param pageTop      The Y-offset where the current page's content begins
+     * @param idealBottom  The Y-offset where the page would end with fixed slicing
+     * @param boundaries   Sorted list of element boundaries from the rendered HTML
+     * @return The safe Y-offset to end the current page at
+     */
+    private fun findSafeBreakPoint(
+        pageTop: Int,
+        idealBottom: Int,
+        boundaries: List<ElementBoundary>
+    ): Int {
+        // Default: use the full page height (same as original fixed behavior)
+        var safeBreak = idealBottom
+
+        for (boundary in boundaries) {
+            // Skip elements entirely above the current page
+            if (boundary.bottom <= pageTop) continue
+            // Elements are sorted — stop when past the page bottom
+            if (boundary.top >= idealBottom) break
+
+            // Does this element straddle the page boundary?
+            if (boundary.top < idealBottom && boundary.bottom > idealBottom) {
+                // Move break to just before this element
+                if (boundary.top > pageTop) {
+                    safeBreak = boundary.top
+                }
+                // If boundary.top <= pageTop, the element is taller than a full page.
+                // We cannot avoid the cut, so keep safeBreak = idealBottom.
+                break
+            }
+        }
+
+        return safeBreak
     }
 
     suspend fun process(state: UnifiedDocumentState, outputUri: Uri) {
@@ -417,7 +494,7 @@ private suspend fun renderHtmlToPdf(
             rootView.addView(webView)
 
             webView.settings.apply {
-                javaScriptEnabled = false
+                javaScriptEnabled = true  // Required for element boundary measurement
                 loadWithOverviewMode = true
                 useWideViewPort = true
             }
@@ -466,91 +543,141 @@ private suspend fun renderHtmlToPdf(
                             )
 
                             // ==========================================
-                            // CREATE PDF
+                            // MEASURE ELEMENT BOUNDARIES VIA JS
+                            // This detects where block elements (paragraphs,
+                            // table rows, headings, etc.) are positioned,
+                            // so we can avoid cutting them at page breaks.
                             // ==========================================
 
-                            val pdfDocument = PdfDocument()
+                            view.evaluateJavascript(ELEMENT_BOUNDARY_JS) { jsResult ->
 
-                            val pageInfo =
-                                PdfDocument.PageInfo.Builder(
-                                    pageWidth,
-                                    pageHeight,
-                                    1
-                                ).create()
+                                try {
 
-                            // IMPORTANT:
-                            // Only this much HTML can fit on one page.
-                            val pageContentHeight =
-                                contentHeight.toInt()
+                                    val cleanedResult = jsResult?.trim()?.removeSurrounding("\"") ?: ""
+                                    val parts = cleanedResult.split("|")
+                                    val cssTotalHeight = parts.getOrNull(0)?.toFloatOrNull() ?: totalContentHeight.toFloat()
+                                    
+                                    // Calculate scale between Android View pixels and JS CSS pixels
+                                    val scale = if (cssTotalHeight > 0) totalContentHeight.toFloat() / cssTotalHeight else 1f
+                                    
+                                    val boundariesStr = if (parts.size > 1) parts[1] else ""
+                                    val boundaries = parseElementBoundaries(boundariesStr, scale)
 
-                            var contentOffset = 0
+                                    // ==========================================
+                                    // CREATE PDF WITH SMART PAGINATION
+                                    // ==========================================
 
-                            while (
-                                contentOffset < totalContentHeight
-                            ) {
+                                    val pdfDocument = PdfDocument()
 
-                                val page =
-                                    pdfDocument.startPage(pageInfo)
+                                    val pageInfo =
+                                        PdfDocument.PageInfo.Builder(
+                                            pageWidth,
+                                            pageHeight,
+                                            1
+                                        ).create()
 
-                                val canvas = page.canvas
+                                    val pageContentHeight =
+                                        contentHeight.toInt()
 
-                                canvas.save()
+                                    var contentOffset = 0
 
-                                // ======================================
-                                // POSITION HTML INSIDE ALL 4 MARGINS
-                                // ======================================
+                                    while (
+                                        contentOffset < totalContentHeight
+                                    ) {
 
-                                canvas.translate(
-                                    leftMargin,
-                                    topMargin - contentOffset
-                                )
+                                        // Find a safe break point that avoids
+                                        // cutting through any block element.
+                                        val idealBottom =
+                                            contentOffset + pageContentHeight
 
-                                // ======================================
-                                // CLIP TO THIS PAGE'S CONTENT SLICE
-                                // This is what actually enforces the
-                                // margins — without it, content bleeds
-                                // past contentWidth/contentHeight and
-                                // pages can show overlapping slices.
-                                // ======================================
+                                        val safeBottom =
+                                            if (idealBottom >= totalContentHeight) {
+                                                // Last page — no adjustment needed
+                                                totalContentHeight
+                                            } else if (boundaries.isEmpty()) {
+                                                // No elements detected — fallback
+                                                idealBottom
+                                            } else {
+                                                findSafeBreakPoint(
+                                                    contentOffset,
+                                                    idealBottom,
+                                                    boundaries
+                                                )
+                                            }
 
-                                canvas.clipRect(
-                                    0f,
-                                    contentOffset.toFloat(),
-                                    contentWidth,
-                                    contentOffset.toFloat() + contentHeight
-                                )
+                                        val page =
+                                            pdfDocument.startPage(pageInfo)
 
-                                // Draw HTML
-                                view.draw(canvas)
+                                        val canvas = page.canvas
 
-                                canvas.restore()
+                                        canvas.save()
 
-                                pdfDocument.finishPage(page)
+                                        // ======================================
+                                        // POSITION HTML INSIDE ALL 4 MARGINS
+                                        // ======================================
 
-                                // Move only by the usable content height
-                                contentOffset += pageContentHeight
+                                        canvas.translate(
+                                            leftMargin,
+                                            topMargin - contentOffset
+                                        )
+
+                                        // ======================================
+                                        // CLIP TO THIS PAGE'S CONTENT SLICE
+                                        // Clip to safeBottom. This ensures that
+                                        // any element straddling the page boundary
+                                        // (which safeBottom avoided) is completely
+                                        // excluded from this page, leaving whitespace
+                                        // instead of a horizontally cut line.
+                                        // ======================================
+
+                                        canvas.clipRect(
+                                            0f,
+                                            contentOffset.toFloat(),
+                                            contentWidth,
+                                            safeBottom.toFloat()
+                                        )
+
+                                        // Draw HTML
+                                        view.draw(canvas)
+
+                                        canvas.restore()
+
+                                        pdfDocument.finishPage(page)
+
+                                        // Advance to the safe break point
+                                        // (may be less than pageContentHeight
+                                        // to avoid cutting an element)
+                                        contentOffset = safeBottom
+                                    }
+
+                                    // ==========================================
+                                    // WRITE PDF
+                                    // ==========================================
+
+                                    val outputStream =
+                                        context.contentResolver
+                                            .openOutputStream(outputUri)
+                                            ?: throw IllegalArgumentException(
+                                                "Could not open OutputStream for $outputUri"
+                                            )
+
+                                    outputStream.use {
+                                        pdfDocument.writeTo(it)
+                                    }
+
+                                    pdfDocument.close()
+
+                                    rootView.removeView(webView)
+
+                                    continuation.resume(Unit)
+
+                                } catch (e: Exception) {
+
+                                    rootView.removeView(webView)
+
+                                    continuation.resumeWithException(e)
+                                }
                             }
-
-                            // ==========================================
-                            // WRITE PDF
-                            // ==========================================
-
-                            val outputStream =
-                                context.contentResolver
-                                    .openOutputStream(outputUri)
-                                    ?: throw IllegalArgumentException(
-                                        "Could not open OutputStream for $outputUri"
-                                    )
-
-                            outputStream.use {
-                                pdfDocument.writeTo(it)
-                            }
-
-                            pdfDocument.close()
-
-                            rootView.removeView(webView)
-
-                            continuation.resume(Unit)
 
                         } catch (e: Exception) {
 

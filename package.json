@@ -8,7 +8,9 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "build:wp": "cd android && .\\gradlew :docx2pdf:assembleDebug"
+    "build:wp": "cd android && .\\gradlew :docx2pdf:assembleDebug",
+    "clean:android": "cd android && .\\gradlew clean",
+    "clean:wp": "cd android && .\\gradlew :docx2pdf:clean"
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.87.1",

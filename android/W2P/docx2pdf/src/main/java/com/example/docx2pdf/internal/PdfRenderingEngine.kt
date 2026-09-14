@@ -37,7 +37,7 @@ internal class PdfRenderingEngine(private val context: Context) {
 
     suspend fun process(state: UnifiedDocumentState, outputUri: Uri) {
         when (state) {
-            is UnifiedDocumentState.HtmlState -> renderHtmlToPdf(state.htmlContent, outputUri)
+            is UnifiedDocumentState.HtmlState -> renderHtmlToPdf(state.htmlContent, outputUri, state.landscape)
             is UnifiedDocumentState.StreamState -> renderStreamToPdf(state, outputUri)
             is UnifiedDocumentState.ImageState -> renderImageToPdf(state, outputUri)
             is UnifiedDocumentState.PagedState -> renderPagedToPdf(state, outputUri)
@@ -352,8 +352,13 @@ internal class PdfRenderingEngine(private val context: Context) {
 
 private suspend fun renderHtmlToPdf(
     htmlContent: String,
-    outputUri: Uri
+    outputUri: Uri,
+    landscape: Boolean = false
 ) {
+    // Use landscape (swapped) dimensions for wide content like XLSX
+    val pageWidth = if (landscape) A4_HEIGHT else A4_WIDTH
+    val pageHeight = if (landscape) A4_WIDTH else A4_HEIGHT
+
     withContext(Dispatchers.Main) {
 
         try {
@@ -386,18 +391,18 @@ private suspend fun renderHtmlToPdf(
 
             val leftMargin = 10f
             val rightMargin = 10f
-            val topMargin = 50f
-            val bottomMargin = 50f
+            val topMargin = if (landscape) 20f else 50f
+            val bottomMargin = if (landscape) 20f else 50f
 
             // ==========================================
             // USABLE PDF AREA
             // ==========================================
 
             val contentWidth =
-                A4_WIDTH - leftMargin - rightMargin
+                pageWidth - leftMargin - rightMargin
 
             val contentHeight =
-                A4_HEIGHT - topMargin - bottomMargin
+                pageHeight - topMargin - bottomMargin
 
             // WebView width is only the usable width.
             val layoutParams = android.view.ViewGroup.LayoutParams(
@@ -468,8 +473,8 @@ private suspend fun renderHtmlToPdf(
 
                             val pageInfo =
                                 PdfDocument.PageInfo.Builder(
-                                    A4_WIDTH,
-                                    A4_HEIGHT,
+                                    pageWidth,
+                                    pageHeight,
                                     1
                                 ).create()
 

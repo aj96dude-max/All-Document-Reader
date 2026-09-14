@@ -81,6 +81,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const mime = (currentFile.mimeType || '').toLowerCase();
   const isPdf = ext === 'pdf' || mime === 'application/pdf';
   const isText = ext === 'txt' || mime === 'text/plain';
+  const isXlsx = ['xlsx', 'xls', 'csv', 'tsv'].includes(ext);
   const needsConversion = !isPdf && !isText && isConvertibleExtension(ext);
 
   const [textContent, setTextContent] = useState<string>('');
@@ -241,7 +242,6 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
     setIsConvertModalVisible(true);
     setConvertStatus('converting');
     try {
-      const startTime = Date.now();
       const permanentPath = await saveConvertedPdf(currentFile.uri, currentFile.name);
       
       const newName = currentFile.name.replace(/\.[^/.]+$/, '') + '.pdf';
@@ -255,12 +255,6 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
       };
       
       await addConvertedFile(convertedFile);
-      
-      const elapsedTime = Date.now() - startTime;
-      const MIN_ANIMATION_DELAY = 2000; // minimum 2s delay
-      if (elapsedTime < MIN_ANIMATION_DELAY) {
-        await new Promise<void>(resolve => setTimeout(resolve, MIN_ANIMATION_DELAY - elapsedTime));
-      }
       
       setConvertStatus('success');
     } catch (error: any) {
@@ -328,7 +322,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
                   ref={pdfRef}
                   source={{ uri: pdfSourceUri, cache: true }}
                   style={styles.pdf}
-                  fitPolicy={0}
+                  fitPolicy={isXlsx ? 2 : 0}
                   spacing={12}
                   showsHorizontalScrollIndicator={false}
                   showsVerticalScrollIndicator={false}

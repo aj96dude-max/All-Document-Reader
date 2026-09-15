@@ -26,7 +26,7 @@ object DocumentParserFactory {
             "epub" -> EpubParser()
             "pdf" -> PdfParser()
             "jpg", "jpeg", "png", "webp", "bmp", "gif" -> ImageParser()
-            "xls" -> throw IllegalArgumentException("The older binary format is not supported. Please use the modern .xlsx format.")
+            "xls" -> XlsParser()
             else -> {
                 throw IllegalArgumentException("Unsupported file format: .$extension")
             }

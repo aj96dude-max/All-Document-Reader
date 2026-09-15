@@ -58,6 +58,10 @@ dependencies {
     // Mammoth for offline DOCX to HTML conversion
     implementation("org.zwobble.mammoth:mammoth:1.4.0")
 
+    // Apache POI for legacy .doc and .ppt formats
+    implementation("org.apache.poi:poi:5.2.3")
+    implementation("org.apache.poi:poi-scratchpad:5.2.3")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

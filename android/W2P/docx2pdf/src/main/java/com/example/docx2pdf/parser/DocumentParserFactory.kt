@@ -19,12 +19,14 @@ object DocumentParserFactory {
             "rtf" -> RichTextParser()
             "md" -> MarkdownParser()
             "docx" -> DocxParser()
+            "doc" -> DocParser()
             "pptx" -> PptxParser()
+            "ppt" -> PptParser()
             "xlsx" -> XlsxParser()
             "epub" -> EpubParser()
             "pdf" -> PdfParser()
             "jpg", "jpeg", "png", "webp", "bmp", "gif" -> ImageParser()
-            "ppt", "xls" -> throw IllegalArgumentException("The older binary format is not supported. Please use the modern .pptx or .xlsx format.")
+            "xls" -> throw IllegalArgumentException("The older binary format is not supported. Please use the modern .xlsx format.")
             else -> {
                 throw IllegalArgumentException("Unsupported file format: .$extension")
             }

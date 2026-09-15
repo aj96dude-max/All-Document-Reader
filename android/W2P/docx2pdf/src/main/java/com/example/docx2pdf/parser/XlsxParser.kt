@@ -43,10 +43,12 @@ class XlsxParser : DocumentParser {
             val htmlBuilder = java.lang.StringBuilder()
             htmlBuilder.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\">")
             htmlBuilder.append("<style>")
-            htmlBuilder.append("body { font-family: sans-serif; margin: 20px; } ")
-            htmlBuilder.append("table { border-collapse: collapse; width: 100%; margin-bottom: 30px; } ")
-            htmlBuilder.append("th, td { border: 1px solid #d0d7de; padding: 6px 12px; text-align: left; vertical-align: top; word-wrap: break-word; } ")
-            htmlBuilder.append("h2 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; color: #333; }")
+            htmlBuilder.append("body { font-family: sans-serif; margin: 10px; font-size: 9px; } ")
+            htmlBuilder.append("table { border-collapse: collapse; table-layout: auto; margin-bottom: 20px; } ")
+            htmlBuilder.append("th, td { border: 1px solid #d0d7de; padding: 3px 6px; text-align: left; vertical-align: top; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; } ")
+            htmlBuilder.append("th { background-color: #f0f3f6; font-weight: bold; } ")
+            htmlBuilder.append("tr:nth-child(even) { background-color: #f9fafb; } ")
+            htmlBuilder.append("h2 { font-size: 12px; margin-top: 14px; margin-bottom: 6px; color: #333; }")
             htmlBuilder.append("</style></head><body>")
             
             var sheetCount = 1
@@ -72,7 +74,10 @@ class XlsxParser : DocumentParser {
             
             htmlBuilder.append("</body></html>")
             
-            UnifiedDocumentState.HtmlState(htmlBuilder.toString())
+            UnifiedDocumentState.HtmlState(
+                htmlContent = htmlBuilder.toString(),
+                landscape = true
+            )
         }
     }
 

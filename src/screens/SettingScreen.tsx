@@ -1,15 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  StatusBar,
-  Modal,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Alert,
-} from 'react-native';
+import { StyleSheet, View, ScrollView, StatusBar, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SettingItem from '../components/settings/SettingItem';
@@ -32,7 +22,7 @@ import DeleteForeverIcon from '../../Assets/svgicons/delete_forever.svg';
 import SecurityIcon from '../../Assets/svgicons/security.svg';
 import ShareIcon from '../../Assets/svgicons/share.svg';
 import FamilyStarIcon from '../../Assets/svgicons/family_star.svg';
-import StorageIcon from '../../Assets/svgicons/storage.svg';
+import StorageIcon from '../../Assets/svgicons/storage_black.svg';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

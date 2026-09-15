@@ -29,6 +29,7 @@ import {
   convertToPdf,
 } from '../services/DocConverterService';
 
+import AlreadyPdfModal from '../components/ui/AlreadyPdfModal';
 import ConvertToPdfModal from '../components/viewer/ConvertToPdfModal';
 import DocumentHeader from '../components/viewer/DocumentHeader';
 import DocumentBottomToolbar from '../components/viewer/DocumentBottomToolbar';
@@ -67,18 +68,25 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
 
   // Modal states
   const [isJumpModalVisible, setIsJumpModalVisible] = useState<boolean>(false);
-  const [isRenameModalVisible, setIsRenameModalVisible] = useState<boolean>(false);
+  const [isAlreadyPdfModalVisible, setIsAlreadyPdfModalVisible] =
+    useState<boolean>(false);
+  const [isRenameModalVisible, setIsRenameModalVisible] =
+    useState<boolean>(false);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
-  
+
   // Manual Conversion Modal states
-  const [isConvertModalVisible, setIsConvertModalVisible] = useState<boolean>(false);
-  const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>('converting');
+  const [isConvertModalVisible, setIsConvertModalVisible] =
+    useState<boolean>(false);
+  const [convertStatus, setConvertStatus] = useState<'converting' | 'success'>(
+    'converting',
+  );
 
   // Text file states
   const ext = (currentFile.extension || '').toLowerCase();
   const mime = (currentFile.mimeType || '').toLowerCase();
   const isPdf = ext === 'pdf' || mime === 'application/pdf';
   const isText = ext === 'txt' || mime === 'text/plain';
+  const isXlsx = ['xlsx', 'xls', 'csv', 'tsv'].includes(ext);
   const needsConversion = !isPdf && !isText && isConvertibleExtension(ext);
 
   const [textContent, setTextContent] = useState<string>('');
@@ -118,7 +126,9 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
         try {
           setLoadingText(true);
           setTextError(null);
-          const path = decodeURIComponent(currentFile.uri.replace(/^file:\/\//, ''));
+          const path = decodeURIComponent(
+            currentFile.uri.replace(/^file:\/\//, ''),
+          );
           const data = await ReactNativeBlobUtil.fs.readFile(path, 'utf8');
           if (isMounted) {
             setTextContent(data);
@@ -156,7 +166,8 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
           console.error('Document conversion error:', err);
           if (isMounted) {
             setConversionError(
-              err?.message || `Failed to convert ${ext.toUpperCase()} file to PDF`
+              err?.message ||
+                `Failed to convert ${ext.toUpperCase()} file to PDF`,
             );
           }
         } finally {
@@ -176,11 +187,12 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const pdfSourceUri = isPdf
     ? currentFile.uri
     : convertedPdfPath
-      ? `file://${convertedPdfPath}`
-      : null;
+    ? `file://${convertedPdfPath}`
+    : null;
 
   // Whether we should show the PDF viewer
-  const showPdfViewer = isPdf || (needsConversion && convertedPdfPath && !conversionError);
+  const showPdfViewer =
+    isPdf || (needsConversion && convertedPdfPath && !conversionError);
 
   // Share handler
   const handleShare = async () => {
@@ -206,30 +218,6 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   const handleJumpToPage = (pageNumber: number) => {
     setCurrentPage(pageNumber);
     pdfRef.current?.setPage(pageNumber);
-  };
-
-  // Delete document
-  const handleDelete = () => {
-    Alert.alert(
-      'Move to Trash',
-      `Move "${fileName}" to Trash? It will be automatically deleted after 30 days.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Move to Trash',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await moveToTrash(currentFile);
-              navigation.goBack();
-            } catch (err: any) {
-              console.error('Move to trash error:', err);
-              Alert.alert('Error', err?.message || 'Could not move file to trash');
-            }
-          },
-        },
-      ]
-    );
   };
 
   // Rename document
@@ -263,9 +251,11 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
     setIsConvertModalVisible(true);
     setConvertStatus('converting');
     try {
-      const startTime = Date.now();
-      const permanentPath = await saveConvertedPdf(currentFile.uri, currentFile.name);
-      
+      const permanentPath = await saveConvertedPdf(
+        currentFile.uri,
+        currentFile.name,
+      );
+
       const newName = currentFile.name.replace(/\.[^/.]+$/, '') + '.pdf';
       const convertedFile: ScannedFile = {
         ...currentFile,
@@ -275,26 +265,43 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
         extension: 'pdf',
         mimeType: 'application/pdf',
       };
-      
+
       await addConvertedFile(convertedFile);
-      
-      const elapsedTime = Date.now() - startTime;
-      const MIN_ANIMATION_DELAY = 2000; // minimum 2s delay
-      if (elapsedTime < MIN_ANIMATION_DELAY) {
-        await new Promise<void>(resolve => setTimeout(resolve, MIN_ANIMATION_DELAY - elapsedTime));
-      }
-      
+
       setConvertStatus('success');
     } catch (error: any) {
       setIsConvertModalVisible(false);
-      Alert.alert('Conversion Failed', error?.message || 'Could not save converted PDF');
+      Alert.alert(
+        'Conversion Failed',
+        error?.message || 'Could not save converted PDF',
+      );
     }
   };
 
+  const handleToolbarConvert = () => {
+    if (isPdf) {
+      setIsAlreadyPdfModalVisible(true);
+    } else {
+      handleConvertToPdf();
+    }
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: isOverlayVisible ? insets.top : 0 }]}>
-      <StatusBar hidden={!isOverlayVisible} barStyle={mode === 'dark' || (mode === 'system' && colors.background === '#141414') ? 'light-content' : 'dark-content'} />
+    <View
+      style={[
+        styles.container,
+        { paddingTop: isOverlayVisible ? insets.top : 0 },
+      ]}
+    >
+      <StatusBar
+        hidden={!isOverlayVisible}
+        barStyle={
+          mode === 'dark' ||
+          (mode === 'system' && colors.background === '#141414')
+            ? 'light-content'
+            : 'dark-content'
+        }
+      />
 
       {/* Top Header Component - Overlay */}
       {isOverlayVisible && (
@@ -304,7 +311,6 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
             isPdf={isPdf}
             onBack={() => navigation.goBack()}
             onShare={handleShare}
-            onConvert={handleConvertToPdf}
           />
         </View>
       )}
@@ -315,9 +321,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
         {isConverting && (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#111827" />
-            <Text style={styles.loadingText}>
-              Converting {ext.toUpperCase()} to PDF…
-            </Text>
+            <Text style={styles.loadingText}>Loading Your File</Text>
             <Text style={styles.convertingSubtext}>
               This may take a moment for large files
             </Text>
@@ -344,7 +348,7 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
                   ref={pdfRef}
                   source={{ uri: pdfSourceUri, cache: true }}
                   style={styles.pdf}
-                  fitPolicy={0}
+                  fitPolicy={isXlsx ? 2 : 0}
                   spacing={12}
                   showsHorizontalScrollIndicator={false}
                   showsVerticalScrollIndicator={false}
@@ -355,11 +359,11 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
                       <Text style={styles.loadingText}>Loading PDF...</Text>
                     </View>
                   )}
-                  onError={(error) => {
+                  onError={error => {
                     console.error('PDF error:', error);
                     setPdfError('Failed to load PDF document');
                   }}
-                  onLoadComplete={(numberOfPages) => {
+                  onLoadComplete={numberOfPages => {
                     setTotalPages(numberOfPages);
                   }}
                   onPageChanged={(page, numberOfPages) => {
@@ -372,7 +376,14 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => setIsJumpModalVisible(true)}
-                  style={[styles.pageIndicatorWrapper, { paddingBottom: !isOverlayVisible ? Math.max(insets.bottom, 12) : 0 }]}
+                  style={[
+                    styles.pageIndicatorWrapper,
+                    {
+                      paddingBottom: !isOverlayVisible
+                        ? Math.max(insets.bottom, 12)
+                        : 0,
+                    },
+                  ]}
                 >
                   <PageIndicator
                     currentPage={currentPage}
@@ -386,9 +397,9 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
 
         {/* Text file viewer */}
         {isText && (
-          <TouchableOpacity 
-            activeOpacity={1} 
-            style={styles.viewerContainer} 
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.viewerContainer}
             onPress={() => setIsOverlayVisible(prev => !prev)}
           >
             <TextDocumentViewer
@@ -403,7 +414,8 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
         {!isPdf && !isText && !needsConversion && (
           <View style={styles.centerContainer}>
             <Text style={styles.placeholder}>
-              Viewing {ext ? ext.toUpperCase() : 'this'} file format is not supported yet.
+              Viewing {ext ? ext.toUpperCase() : 'this'} file format is not
+              supported yet.
             </Text>
           </View>
         )}
@@ -416,8 +428,8 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
             isFavorite={isFavorite}
             bottomInset={insets.bottom}
             onRename={() => setIsRenameModalVisible(true)}
+            onConvert={handleToolbarConvert}
             onToggleFavorite={handleToggleFavorite}
-            onDelete={handleDelete}
             onJumpToPage={() => setIsJumpModalVisible(true)}
           />
         </View>
@@ -436,10 +448,17 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
       {/* Rename Modal Component */}
       <RenameModal
         visible={isRenameModalVisible}
-        initialName={currentFile.name.replace(/\.[^/.]+$/, '') || currentFile.name}
+        initialName={
+          currentFile.name.replace(/\.[^/.]+$/, '') || currentFile.name
+        }
         isRenaming={isRenaming}
         onClose={() => setIsRenameModalVisible(false)}
         onSave={handleRenameSubmit}
+      />
+
+      <AlreadyPdfModal
+        visible={isAlreadyPdfModalVisible}
+        onClose={() => setIsAlreadyPdfModalVisible(false)}
       />
 
       {/* Convert To PDF Modal Component */}
@@ -452,63 +471,64 @@ const DocumentViewerScreen: React.FC<Props> = ({ route, navigation }) => {
   );
 };
 
-const getStyles = (colors: ColorPalette) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  headerWrapper: {
-    backgroundColor: colors.background,
-    zIndex: 10,
-  },
-  bottomToolbarWrapper: {
-    backgroundColor: colors.surfaceElevated,
-    zIndex: 10,
-  },
-  content: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  viewerContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  pdf: {
-    flex: 1,
-    width: '100%',
-    backgroundColor: colors.background,
-  },
-  pageIndicatorWrapper: {
-    width: '100%',
-    backgroundColor: colors.background,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  convertingSubtext: {
-    marginTop: 6,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  placeholder: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.primary,
-    textAlign: 'center',
-  },
-});
+const getStyles = (colors: ColorPalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    headerWrapper: {
+      backgroundColor: colors.background,
+      zIndex: 10,
+    },
+    bottomToolbarWrapper: {
+      backgroundColor: colors.surfaceElevated,
+      zIndex: 10,
+    },
+    content: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    viewerContainer: {
+      flex: 1,
+      position: 'relative',
+    },
+    pdf: {
+      flex: 1,
+      width: '100%',
+      backgroundColor: colors.background,
+    },
+    pageIndicatorWrapper: {
+      width: '100%',
+      backgroundColor: colors.background,
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    convertingSubtext: {
+      marginTop: 6,
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    placeholder: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    errorText: {
+      fontSize: 14,
+      color: colors.primary,
+      textAlign: 'center',
+    },
+  });
 
 export default DocumentViewerScreen;

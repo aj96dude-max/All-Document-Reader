@@ -74,7 +74,10 @@ sealed class UnifiedDocumentState {
      * Used for DOCX or formats that naturally parse to HTML. 
      * Will be rendered using the WebView engine.
      */
-    data class HtmlState(val htmlContent: String) : UnifiedDocumentState()
+    data class HtmlState(
+        val htmlContent: String,
+        val landscape: Boolean = false
+    ) : UnifiedDocumentState()
 
     /**
      * Represents raw text or tabular data that can be drawn natively line-by-line.

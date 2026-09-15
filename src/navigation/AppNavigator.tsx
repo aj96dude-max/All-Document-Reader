@@ -17,6 +17,7 @@ import SideMenu from '../components/SideMenu';
 import CustomHeader from '../components/CustomHeader';
 import { RootStackParamList } from '../types/types';
 import { useTheme } from '../theme/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeIcon from '../../Assets/svgicons/home.svg';
 import HomeActiveIcon from '../../Assets/svgicons/home_active.svg';
@@ -36,7 +37,7 @@ type MainTabsProps = {
 
 const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
   const { colors } = useTheme();
-
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -45,13 +46,12 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
         tabBarStyle: {
           backgroundColor: colors.surfaceElevated,
           borderTopColor: colors.border,
+          height: 58 + insets.bottom,
+          paddingBottom: insets.bottom,
         },
-        tabBarButton: (props) => (
-          <TouchableOpacity 
-            {...props}
-            activeOpacity={0.8}
-          />
-        )
+        tabBarButton: props => (
+          <TouchableOpacity {...props} activeOpacity={0.8} />
+        ),
       }}
     >
       <Tab.Screen
@@ -64,13 +64,12 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
               onMenuPress={onOpenSideMenu}
             />
           ),
-          tabBarIcon: ({ size, focused, color }) => (
+          tabBarIcon: ({ size, focused, color }) =>
             focused ? (
               <HomeActiveIcon width={size} height={size} color={color} />
             ) : (
               <HomeIcon width={size} height={size} color={color} />
-            )
-          ),
+            ),
         }}
       />
       <Tab.Screen
@@ -83,13 +82,12 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
               onMenuPress={onOpenSideMenu}
             />
           ),
-          tabBarIcon: ({ size, focused, color }) => (
+          tabBarIcon: ({ size, focused, color }) =>
             focused ? (
               <FavoriteActiveIcon width={size} height={size} color={color} />
             ) : (
               <FavoriteIcon width={size} height={size} color={color} />
-            )
-          ),
+            ),
         }}
       />
       <Tab.Screen
@@ -102,13 +100,16 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
               onMenuPress={onOpenSideMenu}
             />
           ),
-          tabBarIcon: ({ size, focused, color }) => (
+          tabBarIcon: ({ size, focused, color }) =>
             focused ? (
-              <StorageActiveIcon width={size} height={size} color={color} />
+              <StorageActiveIcon
+                width={size}
+                height={size}
+                color={colors.icon}
+              />
             ) : (
               <StorageIcon width={size} height={size} color={color} />
-            )
-          ),
+            ),
         }}
       />
       <Tab.Screen
@@ -121,13 +122,12 @@ const MainTabs: React.FC<MainTabsProps> = ({ onOpenSideMenu }) => {
               onMenuPress={onOpenSideMenu}
             />
           ),
-          tabBarIcon: ({ size, focused, color }) => (
+          tabBarIcon: ({ size, focused, color }) =>
             focused ? (
               <SettingsActiveIcon width={size} height={size} color={color} />
             ) : (
               <SettingsIcon width={size} height={size} color={color} />
-            )
-          ),
+            ),
         }}
       />
     </Tab.Navigator>
@@ -139,7 +139,10 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        initialRouteName="Splash"
+        screenOptions={{ headerShown: false }}
+      >
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="MainTabs">
@@ -152,14 +155,8 @@ const AppNavigator = () => {
             headerShown: false,
           })}
         />
-        <Stack.Screen
-          name="FileViewer"
-          component={DocumentViewerScreen}
-        />
-        <Stack.Screen
-          name="Trash"
-          component={TrashScreen}
-        />
+        <Stack.Screen name="FileViewer" component={DocumentViewerScreen} />
+        <Stack.Screen name="Trash" component={TrashScreen} />
       </Stack.Navigator>
 
       {/* Side Menu Drawer Component */}

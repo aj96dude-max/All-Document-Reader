@@ -104,6 +104,14 @@ sealed class UnifiedDocumentState {
         val pageWidthPx: Double,
         val pageHeightPx: Double
     ) : UnifiedDocumentState()
+
+    /**
+     * A state representing a parser that renders its output directly to a PdfDocument,
+     * completely bypassing the default PdfRenderingEngine layout system.
+     */
+    data class CustomPdfState(
+        val generatePdf: suspend (context: android.content.Context, outputUri: Uri) -> Unit
+    ) : UnifiedDocumentState()
 }
 
 /**

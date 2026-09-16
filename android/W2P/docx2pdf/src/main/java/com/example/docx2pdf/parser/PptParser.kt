@@ -1,62 +1,88 @@
 package com.example.docx2pdf.parser
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.InputStream
+import org.apache.poi.hslf.usermodel.HSLFSlideShow
+import org.apache.poi.hslf.usermodel.HSLFTextShape
 
 /**
- * Parser for legacy PPT files (Office 97-2003).
- * Extracts text using Apache POI Scratchpad and wraps it in a simple HTML document.
+ * Native parser for legacy PPT files (Office 97-2003).
+ * Extracts text and anchor coordinates using Apache POI HSLFSlideShow
+ * and draws them directly to a PdfDocument Canvas, bypassing Graphics2D.
  */
 class PptParser : DocumentParser {
-    
+
     companion object {
         private const val TAG = "PptParser"
     }
 
     override suspend fun parse(context: Context, inputUri: Uri): UnifiedDocumentState {
-        val htmlContent = withContext(Dispatchers.IO) {
-            val resolver = context.contentResolver
-            var inputStream: InputStream? = null
-            try {
-                inputStream = resolver.openInputStream(inputUri)
-                    ?: throw IllegalArgumentException("Could not open InputStream for $inputUri")
+        return UnifiedDocumentState.CustomPdfState { ctx, outputUri ->
+            withContext(Dispatchers.IO) {
+                ctx.contentResolver.openInputStream(inputUri)?.use { inputStream ->
+                    ctx.contentResolver.openOutputStream(outputUri)?.use { outputStream ->
+                        val pdfDocument = PdfDocument()
+                        
+                        try {
+                            val ppt = HSLFSlideShow(inputStream)
+                            val getPageSizeMethod = ppt.javaClass.getMethod("getPageSize")
+                            val pageSize = getPageSizeMethod.invoke(ppt)!!
+                            val pageWidth = (pageSize.javaClass.getMethod("getWidth").invoke(pageSize) as Double).toInt()
+                            val pageHeight = (pageSize.javaClass.getMethod("getHeight").invoke(pageSize) as Double).toInt()
 
-                // Legacy PPT (Office 97-2003) relies on java.awt graphics classes
-                // that are completely absent from the Android SDK. Attempting to parse them
-                // via Apache POI ExtractorFactory will crash the AndroidRuntime with a
-                // fatal ExceptionInInitializerError/NoClassDefFoundError before it can be caught.
-                // Therefore, we bypass extraction entirely and return a graceful fallback HTML.
-                
-                val errorHtml = """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <style>
-                        body { font-family: 'Arial', sans-serif; padding: 40px; text-align: center; color: #333; }
-                        h2 { color: #d9534f; }
-                    </style>
-                </head>
-                <body>
-                    <h2>Legacy PPT Not Supported</h2>
-                    <p>The older <strong>.ppt</strong> (Office 97-2003) format requires desktop graphics libraries that are unavailable on Android.</p>
-                    <p>Please open this file in PowerPoint and save it as a modern <strong>.pptx</strong> file to convert it offline.</p>
-                </body>
-                </html>
-                """.trimIndent()
-                return@withContext errorHtml
-            } catch (e: Throwable) {
-                Log.e(TAG, "Error handling PPT", e)
-                return@withContext "<html><body>Error handling PPT</body></html>"
-            } finally {
-                inputStream?.close()
+                            val paint = Paint().apply {
+                                color = Color.BLACK
+                                textSize = 12f
+                                isAntiAlias = true
+                            }
+
+                            for ((index, slide) in ppt.slides.withIndex()) {
+                                val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create()
+                                val page = pdfDocument.startPage(pageInfo)
+                                val canvas = page.canvas
+
+                                // Fill background with white
+                                canvas.drawColor(Color.WHITE)
+
+                                for (shape in slide.shapes) {
+                                    if (shape is HSLFTextShape) {
+                                        val text = shape.text ?: continue
+                                        val getAnchorMethod = shape.javaClass.getMethod("getAnchor")
+                                        val anchor = getAnchorMethod.invoke(shape) ?: continue
+                                        
+                                        // anchor is java.awt.Rectangle, bypass compiler check with reflection
+                                        val x = (anchor.javaClass.getMethod("getX").invoke(anchor) as Double).toFloat()
+                                        var y = (anchor.javaClass.getMethod("getY").invoke(anchor) as Double).toFloat()
+                                        
+                                        // Very simple text rendering (no word wrap to keep it simple, just split by newlines)
+                                        val lines = text.split("\n")
+                                        for (line in lines) {
+                                            canvas.drawText(line, x, y + paint.textSize, paint)
+                                            y += paint.textSize * 1.2f
+                                        }
+                                    }
+                                }
+
+                                pdfDocument.finishPage(page)
+                            }
+                            
+                            pdfDocument.writeTo(outputStream)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to natively render PPT", e)
+                            throw e
+                        } finally {
+                            pdfDocument.close()
+                        }
+                    }
+                }
             }
         }
-        
-        return UnifiedDocumentState.HtmlState(htmlContent)
     }
 }

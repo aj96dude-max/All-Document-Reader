@@ -54,6 +54,8 @@ object OfflineDocConverterImpl : OfflineDocConverter {
                         input.copyTo(output)
                     }
                 }
+            } else if (state is UnifiedDocumentState.CustomPdfState) {
+                state.generatePdf(context, outputUri)
             } else {
                 val engine = PdfRenderingEngine(context)
                 engine.process(state, outputUri)

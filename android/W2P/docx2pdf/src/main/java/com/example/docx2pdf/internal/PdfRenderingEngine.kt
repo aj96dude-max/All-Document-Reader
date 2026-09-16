@@ -119,6 +119,9 @@ internal class PdfRenderingEngine(private val context: Context) {
             is UnifiedDocumentState.ImageState -> renderImageToPdf(state, outputUri)
             is UnifiedDocumentState.PagedState -> renderPagedToPdf(state, outputUri)
             is UnifiedDocumentState.PdfState -> {
+                // Copy existing PDF
+            }
+            is UnifiedDocumentState.CustomPdfState -> {
                 // Handled upstream in OfflineDocConverter
             }
         }

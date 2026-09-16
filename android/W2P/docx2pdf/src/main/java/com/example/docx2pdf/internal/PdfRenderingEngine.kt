@@ -114,7 +114,7 @@ internal class PdfRenderingEngine(private val context: Context) {
 
     suspend fun process(state: UnifiedDocumentState, outputUri: Uri) {
         when (state) {
-            is UnifiedDocumentState.HtmlState -> renderHtmlToPdf(state.htmlContent, outputUri, state.landscape)
+            is UnifiedDocumentState.HtmlState -> renderHtmlToPdf(state.htmlContent, state.fileUri, outputUri, state.landscape)
             is UnifiedDocumentState.StreamState -> renderStreamToPdf(state, outputUri)
             is UnifiedDocumentState.ImageState -> renderImageToPdf(state, outputUri)
             is UnifiedDocumentState.PagedState -> renderPagedToPdf(state, outputUri)
@@ -256,14 +256,54 @@ internal class PdfRenderingEngine(private val context: Context) {
                         currentY += if (element.isHeader) headerLineHeight else lineHeight
                     }
                     is DocumentElement.TableRow -> {
-                        // Simple column rendering for CSV/TSV
-                        val columnWidth = (A4_WIDTH - 2 * MARGIN) / element.columns.size.coerceAtLeast(1)
+                        // Advanced Grid and Column rendering for CSV/TSV
+                        val colCount = element.columns.size.coerceAtLeast(1)
+                        val columnWidth = (A4_WIDTH - 2 * MARGIN) / colCount
+                        
+                        // First pass to calculate max height of this row
+                        var maxRowHeight = lineHeight
+                        val layouts = element.columns.map { columnText ->
+                            val textLayout = android.text.StaticLayout.Builder.obtain(
+                                columnText, 0, columnText.length, android.text.TextPaint(textPaint), columnWidth.toInt() - 10
+                            ).setAlignment(android.text.Layout.Alignment.ALIGN_NORMAL).build()
+                            
+                            if (textLayout.height > maxRowHeight) {
+                                maxRowHeight = textLayout.height.toFloat()
+                            }
+                            textLayout
+                        }
+                        
+                        // Check pagination for the row height
+                        if (currentY + maxRowHeight > A4_HEIGHT - MARGIN) {
+                            pdfDocument.finishPage(currentPage)
+                            currentPage = pdfDocument.startPage(pageInfo)
+                            currentCanvas = currentPage.canvas
+                            currentY = MARGIN + maxRowHeight
+                        }
+                        
+                        // Grid Paint
+                        val gridPaint = Paint().apply {
+                            color = Color.LTGRAY
+                            style = Paint.Style.STROKE
+                            strokeWidth = 1f
+                        }
+
                         var currentX = MARGIN
-                        for (column in element.columns) {
-                            currentCanvas.drawText(column, currentX, currentY, textPaint)
+                        for ((index, layout) in layouts.withIndex()) {
+                            // Draw cell borders
+                            val cellRect = android.graphics.RectF(currentX, currentY - lineHeight, currentX + columnWidth, currentY - lineHeight + maxRowHeight + 10f)
+                            currentCanvas.drawRect(cellRect, gridPaint)
+                            
+                            // Draw wrapped text
+                            currentCanvas.save()
+                            currentCanvas.translate(currentX + 5f, currentY - lineHeight + 5f)
+                            layout.draw(currentCanvas)
+                            currentCanvas.restore()
+                            
                             currentX += columnWidth
                         }
-                        currentY += lineHeight
+                        
+                        currentY += maxRowHeight + 10f
                     }
                 }
             }
@@ -428,7 +468,8 @@ internal class PdfRenderingEngine(private val context: Context) {
     }
 
 private suspend fun renderHtmlToPdf(
-    htmlContent: String,
+    htmlContent: String?,
+    fileUri: Uri?,
     outputUri: Uri,
     landscape: Boolean = false
 ) {
@@ -482,18 +523,18 @@ private suspend fun renderHtmlToPdf(
                 pageHeight - topMargin - bottomMargin
 
             // WebView width is only the usable width.
-            val layoutParams = android.view.ViewGroup.LayoutParams(
+            val layoutParams = android.widget.FrameLayout.LayoutParams(
                 contentWidth.toInt(),
                 contentHeight.toInt()
             )
-
             webView.layoutParams = layoutParams
-
-            webView.alpha = 0.01f
-
-            rootView.addView(webView)
+            
+            // We intentionally do NOT add the WebView to the rootView. 
+            // It will exist entirely off-screen in memory for PDF rendering.
 
             webView.settings.apply {
+                allowFileAccess = true
+                allowContentAccess = true
                 javaScriptEnabled = true  // Required for element boundary measurement
                 loadWithOverviewMode = true
                 useWideViewPort = true
@@ -667,21 +708,15 @@ private suspend fun renderHtmlToPdf(
 
                                     pdfDocument.close()
 
-                                    rootView.removeView(webView)
-
                                     continuation.resume(Unit)
 
                                 } catch (e: Exception) {
-
-                                    rootView.removeView(webView)
 
                                     continuation.resumeWithException(e)
                                 }
                             }
 
                         } catch (e: Exception) {
-
-                            rootView.removeView(webView)
 
                             continuation.resumeWithException(e)
                         }
@@ -690,17 +725,19 @@ private suspend fun renderHtmlToPdf(
                 }
             }
 
-            webView.loadDataWithBaseURL(
-                null,
-                htmlContent,
-                "text/html",
-                "UTF-8",
-                null
-            )
+            if (fileUri != null) {
+                webView.loadUrl(fileUri.toString())
+            } else {
+                webView.loadDataWithBaseURL(
+                    null,
+                    htmlContent ?: "",
+                    "text/html",
+                    "UTF-8",
+                    null
+                )
+            }
 
             continuation.invokeOnCancellation {
-
-                rootView.removeView(webView)
                 webView.destroy()
             }
         }

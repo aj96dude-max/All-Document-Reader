@@ -75,7 +75,8 @@ sealed class UnifiedDocumentState {
      * Will be rendered using the WebView engine.
      */
     data class HtmlState(
-        val htmlContent: String,
+        val htmlContent: String? = null,
+        val fileUri: Uri? = null,
         val landscape: Boolean = false
     ) : UnifiedDocumentState()
 

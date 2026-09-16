@@ -5,6 +5,7 @@ import {
   View,
   AppState,
   AppStateStatus,
+  ScrollView
 } from 'react-native';
 import ToolsContainer from '../components/home/toolsContainer';
 import RecentDocuments from '../components/home/RecentDocuments';
@@ -87,7 +88,11 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.container}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <StatusBar
           barStyle={
             mode === 'dark' ||
@@ -97,8 +102,11 @@ const HomeScreen = () => {
           }
         />
         <ToolsContainer onRequirePermission={requirePermission} />
-        <RecentDocuments onRequirePermission={requirePermission} />
-      </View>
+        <RecentDocuments 
+          onRequirePermission={requirePermission} 
+          scrollEnabled={false}
+        />
+      </ScrollView>
 
       {/* File Access Permission Modal */}
       <FilePermissionModal

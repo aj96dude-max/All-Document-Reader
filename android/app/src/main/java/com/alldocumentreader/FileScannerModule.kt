@@ -78,11 +78,16 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
                 "text/markdown", "text/x-tex",
                 "text/csv", "text/comma-separated-values", "text/tab-separated-values",
                 "application/json", "application/xml", "text/xml",
-                "image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp",
+                "image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/svg+xml",
                 "text/x-java-source", "text/x-java", "text/x-kotlin", "text/x-python",
                 "text/x-c", "text/x-c++", "text/html", "application/javascript", "text/javascript",
                 "text/css", "application/x-yaml", "text/yaml", "application/x-sh",
-                "text/x-swift", "text/x-ruby", "text/x-go", "text/rust", "application/x-httpd-php", "text/x-php"
+                "text/x-swift", "text/x-ruby", "text/x-go", "text/rust", "application/x-httpd-php", "text/x-php",
+                "application/vnd.oasis.opendocument.spreadsheet",
+                "application/vnd.oasis.opendocument.text",
+                "application/vnd.oasis.opendocument.presentation",
+                "message/rfc822",
+                "application/vnd.comicbook+zip", "application/x-cbz"
             )
             "pdf" -> listOf("application/pdf")
             "word" -> listOf(
@@ -100,6 +105,24 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
             "txt" -> listOf("text/plain")
             "epub" -> listOf("application/epub+zip")
             "rtf" -> listOf("application/rtf", "text/rtf")
+            "image" -> listOf("image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp")
+            "code" -> listOf(
+                "text/x-java-source", "text/x-java", "text/x-kotlin", "text/x-python",
+                "text/x-c", "text/x-c++", "text/html", "application/javascript", "text/javascript",
+                "text/css", "application/x-yaml", "text/yaml", "application/x-sh",
+                "text/x-swift", "text/x-ruby", "text/x-go", "text/rust", "application/x-httpd-php", "text/x-php"
+            )
+            "markup" -> listOf("application/json", "application/xml", "text/xml", "text/markdown", "text/x-tex")
+            "csv" -> listOf("text/csv", "text/comma-separated-values", "text/tab-separated-values")
+            "psd" -> listOf("image/vnd.adobe.photoshop", "image/x-photoshop", "application/x-photoshop")
+            "svg" -> listOf("image/svg+xml")
+            "ods" -> listOf("application/vnd.oasis.opendocument.spreadsheet")
+            "odt" -> listOf("application/vnd.oasis.opendocument.text")
+            "odp" -> listOf("application/vnd.oasis.opendocument.presentation")
+            "eml" -> listOf("message/rfc822")
+            "cbz" -> listOf("application/vnd.comicbook+zip", "application/x-cbz")
+            "html" -> listOf("text/html")
+            "md" -> listOf("text/markdown")
             else -> emptyList()
         }
     }
@@ -109,8 +132,9 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
             "all" -> setOf(
                 "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "epub", "rtf",
                 "md", "tex", "csv", "tsv", "json", "xml",
-                "jpg", "jpeg", "png", "webp", "gif", "bmp",
-                "java", "kt", "py", "c", "cpp", "html", "js", "css", "yaml", "yml", "sh", "swift", "rb", "go", "rs", "php"
+                "jpg", "jpeg", "png", "webp", "gif", "bmp", "psd", "svg",
+                "ods", "odt", "odp", "eml", "cbz",
+                "java", "kt", "py", "c", "cpp", "html", "htm", "js", "css", "yaml", "yml", "sh", "swift", "rb", "go", "rs", "php"
             )
             "pdf" -> setOf("pdf")
             "word" -> setOf("doc", "docx")
@@ -119,6 +143,19 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
             "txt" -> setOf("txt")
             "epub" -> setOf("epub")
             "rtf" -> setOf("rtf")
+            "image" -> setOf("jpg", "jpeg", "png", "webp", "gif", "bmp")
+            "code" -> setOf("java", "kt", "py", "c", "cpp", "html", "htm", "js", "css", "yaml", "yml", "sh", "swift", "rb", "go", "rs", "php")
+            "markup" -> setOf("json", "xml", "md", "tex")
+            "csv" -> setOf("csv", "tsv")
+            "psd" -> setOf("psd")
+            "svg" -> setOf("svg")
+            "ods" -> setOf("ods")
+            "odt" -> setOf("odt")
+            "odp" -> setOf("odp")
+            "eml" -> setOf("eml")
+            "cbz" -> setOf("cbz")
+            "html" -> setOf("html", "htm")
+            "md" -> setOf("md")
             else -> emptySet()
         }
     }
@@ -146,6 +183,12 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
             "image/webp" -> "webp"
             "image/gif" -> "gif"
             "image/bmp" -> "bmp"
+            "image/svg+xml" -> "svg"
+            "application/vnd.oasis.opendocument.spreadsheet" -> "ods"
+            "application/vnd.oasis.opendocument.text" -> "odt"
+            "application/vnd.oasis.opendocument.presentation" -> "odp"
+            "message/rfc822" -> "eml"
+            "application/vnd.comicbook+zip", "application/x-cbz" -> "cbz"
             "text/x-java-source", "text/x-java" -> "java"
             "text/x-kotlin" -> "kt"
             "text/x-python" -> "py"
@@ -161,6 +204,7 @@ class FileScannerModule(reactContext: ReactApplicationContext) :
             "text/x-go" -> "go"
             "text/rust" -> "rs"
             "application/x-httpd-php", "text/x-php" -> "php"
+            "image/vnd.adobe.photoshop", "image/x-photoshop", "application/x-photoshop" -> "psd"
             else -> ""
         }
     }

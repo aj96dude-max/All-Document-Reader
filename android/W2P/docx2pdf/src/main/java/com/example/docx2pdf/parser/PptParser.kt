@@ -5,8 +5,6 @@ import android.net.Uri
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.apache.poi.hslf.usermodel.HSLFSlideShow
-import org.apache.poi.hslf.usermodel.HSLFTextShape
 import java.io.InputStream
 
 /**
@@ -23,57 +21,38 @@ class PptParser : DocumentParser {
         val htmlContent = withContext(Dispatchers.IO) {
             val resolver = context.contentResolver
             var inputStream: InputStream? = null
-            var ppt: HSLFSlideShow? = null
             try {
                 inputStream = resolver.openInputStream(inputUri)
                     ?: throw IllegalArgumentException("Could not open InputStream for $inputUri")
 
-                ppt = HSLFSlideShow(inputStream)
-                val textBuilder = StringBuilder()
-                for (slide in ppt.slides) {
-                    for (shape in slide.shapes) {
-                        if (shape is HSLFTextShape) {
-                            textBuilder.append(shape.text).append("\n")
-                        }
-                    }
-                }
-                val text = textBuilder.toString()
-
-                // Encode HTML entities
-                val encodedText = text.replace("&", "&amp;")
-                                      .replace("<", "&lt;")
-                                      .replace(">", "&gt;")
-                                      .replace("\n", "<br>")
-
-                // Wrap the extracted text in a clean A4 styled document
-                val html = """
+                // Legacy PPT (Office 97-2003) relies on java.awt graphics classes
+                // that are completely absent from the Android SDK. Attempting to parse them
+                // via Apache POI ExtractorFactory will crash the AndroidRuntime with a
+                // fatal ExceptionInInitializerError/NoClassDefFoundError before it can be caught.
+                // Therefore, we bypass extraction entirely and return a graceful fallback HTML.
+                
+                val errorHtml = """
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <meta charset="utf-8">
                     <style>
-                        body { 
-                            font-family: 'Arial', sans-serif; 
-                            padding: 40px; 
-                            color: black; 
-                            background: white; 
-                            margin: 0;
-                        }
-                        p { line-height: 1.5; margin-bottom: 10px; }
+                        body { font-family: 'Arial', sans-serif; padding: 40px; text-align: center; color: #333; }
+                        h2 { color: #d9534f; }
                     </style>
                 </head>
                 <body>
-                    <p>${encodedText}</p>
+                    <h2>Legacy PPT Not Supported</h2>
+                    <p>The older <strong>.ppt</strong> (Office 97-2003) format requires desktop graphics libraries that are unavailable on Android.</p>
+                    <p>Please open this file in PowerPoint and save it as a modern <strong>.pptx</strong> file to convert it offline.</p>
                 </body>
                 </html>
                 """.trimIndent()
-
-                html
-            } catch (e: Exception) {
-                Log.e(TAG, "Error during PPT -> HTML conversion", e)
-                throw e
+                return@withContext errorHtml
+            } catch (e: Throwable) {
+                Log.e(TAG, "Error handling PPT", e)
+                return@withContext "<html><body>Error handling PPT</body></html>"
             } finally {
-                ppt?.close()
                 inputStream?.close()
             }
         }

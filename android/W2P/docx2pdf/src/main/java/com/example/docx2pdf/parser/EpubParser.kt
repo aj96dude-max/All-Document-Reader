@@ -20,6 +20,7 @@ import java.util.zip.ZipInputStream
 class EpubParser : DocumentParser {
     override suspend fun parse(context: Context, inputUri: Uri): UnifiedDocumentState {
         return withContext(Dispatchers.IO) {
+            try {
             val factory = XmlPullParserFactory.newInstance()
             factory.isNamespaceAware = true
 
@@ -65,40 +66,48 @@ class EpubParser : DocumentParser {
                 opfBasePath + href
             }
 
-            // Pass 3: Extract HTML contents in order
-            val htmlContentBuilder = java.lang.StringBuilder()
-            htmlContentBuilder.append("<html><body>")
+            // Pass 3: Extract HTML contents and parse text
+            val htmlBuilder = StringBuilder()
+            htmlBuilder.append("<html><body>")
 
             context.contentResolver.openInputStream(inputUri)?.use { stream ->
                 val zipInputStream = ZipInputStream(stream)
                 
-                // Since ZIP entries are not necessarily in spine order, we extract them into a map
-                // and then assemble them after.
                 val extractedHtml = mutableMapOf<String, String>()
                 val targetPaths = htmlPathsToExtract.toSet()
 
                 while (true) {
                     val entry = zipInputStream.nextEntry ?: break
-                    if (targetPaths.contains(entry.name)) {
+                    val decodedName = try { java.net.URLDecoder.decode(entry.name, "UTF-8") } catch(e: Exception) { entry.name }
+                    if (targetPaths.contains(entry.name) || targetPaths.contains(decodedName)) {
                         val html = String(zipInputStream.readBytes(), Charsets.UTF_8)
-                        extractedHtml[entry.name] = stripImages(html)
+                        extractedHtml[entry.name] = html
+                        extractedHtml[decodedName] = html
                     }
                     zipInputStream.closeEntry()
                 }
 
-                // Assemble in spine order
                 for (path in htmlPathsToExtract) {
-                    extractedHtml[path]?.let {
-                        // Extract just the body content if possible, to avoid nested html/body tags
-                        val bodyContent = extractBody(it)
-                        htmlContentBuilder.append(bodyContent)
-                        htmlContentBuilder.append("<hr/>") // Page break between chapters
+                    val decodedPath = try { java.net.URLDecoder.decode(path, "UTF-8") } catch(e: Exception) { path }
+                    val html = extractedHtml[path] ?: extractedHtml[decodedPath]
+                    if (html != null) {
+                        val bodyContent = extractBody(html)
+                        val stripped = stripImages(bodyContent)
+                        htmlBuilder.append("<div style='page-break-after: always;'>")
+                        htmlBuilder.append(stripped)
+                        htmlBuilder.append("</div>")
                     }
                 }
             }
             
-            htmlContentBuilder.append("</body></html>")
-            UnifiedDocumentState.HtmlState(htmlContentBuilder.toString())
+            htmlBuilder.append("</body></html>")
+            
+            
+            UnifiedDocumentState.HtmlState(htmlContent = htmlBuilder.toString())
+            } catch (e: Throwable) {
+                android.util.Log.e("EpubParser", "Failed to parse EPUB", e)
+                throw Exception(e.message, e)
+            }
         }
     }
 

@@ -28,14 +28,14 @@ class DocConverterModule(reactContext: ReactApplicationContext) :
             // Text & Markup
             "txt", "tex", "json", "xml", "md",
             // Source Code
-            "java", "kt", "py", "c", "cpp", "html", "js", "css",
+            "java", "kt", "py", "c", "cpp", "html", "htm", "js", "css",
             "yaml", "yml", "sh", "swift", "rb", "go", "rs", "php",
             // Delimited Data
             "csv", "tsv",
             // Rich Text / Office (modern formats)
-            "rtf", "docx", "pptx", "xlsx", "epub",
+            "rtf", "docx", "doc", "pptx", "ppt", "xlsx", "xls", "epub", "odt", "odp",
             // Images
-            "jpg", "jpeg", "png", "webp", "bmp", "gif",
+            "jpg", "jpeg", "png", "webp", "bmp", "gif", "psd",
             // PDF passthrough
             "pdf"
         )

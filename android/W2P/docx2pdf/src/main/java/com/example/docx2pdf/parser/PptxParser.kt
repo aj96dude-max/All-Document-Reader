@@ -361,7 +361,7 @@ class PptxParser : DocumentParser {
                 XmlPullParser.START_TAG -> {
                     when (val tag = parser.name) {
                         "bg" -> inBg = true
-                        "spPr" -> inSpPr = true
+                        "spPr", "xfrm" -> inSpPr = true
                         "grpSpPr" -> inGrpSpPr = true
                         "style" -> inStyle = true
                         "ph" -> {
@@ -489,7 +489,8 @@ class PptxParser : DocumentParser {
                         "blip" -> {
                             var embedId: String? = null
                             for (i in 0 until parser.attributeCount) {
-                                if (parser.getAttributeName(i) == "embed") {
+                                val attrName = parser.getAttributeName(i)
+                                if (attrName == "embed" || attrName.endsWith(":embed")) {
                                     embedId = parser.getAttributeValue(i)
                                     break
                                 }
@@ -518,7 +519,7 @@ class PptxParser : DocumentParser {
                                 )
                             )
                         }
-                        "spPr" -> {
+                        "spPr", "xfrm" -> {
                             inSpPr = false
                             var geom: ShapeGeom? = if (offX != null && offY != null && extW != null && extH != null) {
                                 toAbs(offX!!, offY!!, extW!!, extH!!)
@@ -546,7 +547,7 @@ class PptxParser : DocumentParser {
                                 currentRuns = mutableListOf()
                             }
                         }
-                        "sp" -> {
+                        "sp", "graphicFrame", "cxnSp" -> {
                             val skip = renderOnlyBackgroundShapes && (phType != null || phIdx != null) && !hasText
                             if (!skip && currentShapeGeom != null && currentParagraphs.isNotEmpty()) {
                                 shapes.add(SlideShape.TextBlock(

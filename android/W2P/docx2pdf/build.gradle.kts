@@ -61,6 +61,15 @@ dependencies {
     // Apache POI for legacy .doc and .ppt formats
     implementation("org.apache.poi:poi:5.2.3")
     implementation("org.apache.poi:poi-scratchpad:5.2.3")
+    
+    // Apache POI OOXML for .pptx traversal
+    implementation("org.apache.poi:poi-ooxml:5.2.3") {
+        exclude(group = "stax", module = "stax-api")
+        exclude(group = "org.apache.xmlbeans", module = "xmlbeans")
+    }
+
+    // AndroidSVG for native .svg rendering
+    implementation("com.caverock:androidsvg-aar:1.4")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

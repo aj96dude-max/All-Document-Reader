@@ -13,9 +13,10 @@ object DocumentParserFactory {
         val extension = getExtension(context, uri).lowercase(Locale.ROOT)
         
         return when (extension) {
-            "txt", "tex", "json", "xml", "java", "kt", "py", "c", "cpp", "html", "js", "css", 
+            "txt", "tex", "json", "xml", "java", "kt", "py", "c", "cpp", "js", "css", 
             "yaml", "yml", "sh", "swift", "rb", "go", "rs", "php" -> PlainTextParser(isMonospace = (extension != "txt" && extension != "tex"))
-            "csv", "tsv" -> DelimitedParser(delimiter = if (extension == "csv") "," else "\t")
+            "html", "htm" -> HtmlParser()
+            "csv", "tsv" -> CsvParser(delimiter = if (extension == "csv") "," else "\t")
             "rtf" -> RichTextParser()
             "md" -> MarkdownParser()
             "docx" -> DocxParser()
@@ -23,10 +24,16 @@ object DocumentParserFactory {
             "pptx" -> PptxParser()
             "ppt" -> PptParser()
             "xlsx" -> XlsxParser()
+            "odt", "odp" -> OdfParser()
             "epub" -> EpubParser()
             "pdf" -> PdfParser()
             "jpg", "jpeg", "png", "webp", "bmp", "gif" -> ImageParser()
             "xls" -> XlsParser()
+            "psd" -> PsdParser()
+            "svg" -> SvgParser()
+            "eml" -> EmlParser()
+            "cbz" -> CbzParser()
+            "ods" -> OdsParser()
             else -> {
                 throw IllegalArgumentException("Unsupported file format: .$extension")
             }

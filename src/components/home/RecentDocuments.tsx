@@ -48,9 +48,13 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 type RecentDocumentsProps = {
   onRequirePermission?: (onGranted: () => void) => void;
+  scrollEnabled?: boolean;
 };
 
-const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }) => {
+const RecentDocuments: React.FC<RecentDocumentsProps> = ({
+  onRequirePermission,
+  scrollEnabled = true,
+}) => {
   const navigation = useNavigation<NavigationProp>();
 
   const [recentFiles, setRecentFiles] = useState<ScannedFile[]>([]);
@@ -311,6 +315,7 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
           data={filteredFiles}
           keyExtractor={(file) => file.uri || file.id}
           showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollEnabled}
           contentContainerStyle={{ paddingBottom: 20 }}
           style={styles.listContainer}
           renderItem={({ item: file }) => (
@@ -366,7 +371,6 @@ const RecentDocuments: React.FC<RecentDocumentsProps> = ({ onRequirePermission }
 
 const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   container: {
-    flex: 1,
     marginTop: 22,
     paddingHorizontal: 16,
     paddingBottom: 10,
@@ -434,11 +438,10 @@ const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => S
     tintColor: colors.iconInactive,
   },
   listContainer: {
-    flex: 1,
     marginTop: 2,
   },
   centerLoading: {
-    flex: 1,
+    height: 150,
     justifyContent: 'center',
     alignItems: 'center',
   },

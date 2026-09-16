@@ -13,7 +13,7 @@ import java.io.InputStreamReader
  * Reads the file line-by-line and splits by the specified delimiter.
  * Emits TableRows via a Flow to maintain a low memory footprint.
  */
-class DelimitedParser(private val delimiter: String) : DocumentParser {
+class CsvParser(private val delimiter: String) : DocumentParser {
     override suspend fun parse(context: Context, inputUri: Uri): UnifiedDocumentState {
         return withContext(Dispatchers.IO) {
             val flow = flow {

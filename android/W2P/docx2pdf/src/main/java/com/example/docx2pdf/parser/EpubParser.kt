@@ -79,7 +79,7 @@ class EpubParser : DocumentParser {
 
             context.contentResolver.openInputStream(inputUri)?.use { stream ->
                 val zipInputStream = ZipInputStream(stream)
-                
+               
                 val extractedHtml = mutableMapOf<String, String>()
                 val targetPaths = htmlPathsToExtract.toSet()
 
@@ -106,57 +106,57 @@ class EpubParser : DocumentParser {
                     }
                 }
             }
-            
+           
             val htmlString = htmlBuilder.toString()
-            
+           
             ctx.contentResolver.openOutputStream(outputUri)?.use { outputStream ->
                 val pdfDocument = PdfDocument()
                 try {
                     val pageWidth = 595
                     val pageHeight = 842 // Standard A4 at 72dpi
                     val padding = 40
-                    
+                   
                     val spanned = Html.fromHtml(htmlString, Html.FROM_HTML_MODE_COMPACT)
                     val textPaint = TextPaint().apply {
                         color = Color.BLACK
                         textSize = 12f
                         isAntiAlias = true
                     }
-                    
+                   
                     val staticLayout = StaticLayout.Builder.obtain(spanned, 0, spanned.length, textPaint, pageWidth - 2 * padding)
                         .setAlignment(android.text.Layout.Alignment.ALIGN_NORMAL)
                         .setLineSpacing(0f, 1f)
                         .setIncludePad(false)
                         .build()
-                        
+                       
                     var yOffset = 0
                     var pageNum = 1
-                    
+                   
                     while (yOffset < staticLayout.height) {
                         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum++).create()
                         val page = pdfDocument.startPage(pageInfo)
                         val canvas = page.canvas
-                        
+                       
                         canvas.drawColor(Color.WHITE)
                         canvas.save()
                         // Clip exactly inside the bounds, translating up to simulate scrolling
                         canvas.translate(padding.toFloat(), padding.toFloat() - yOffset)
-                        
+                       
                         // We also need to clip to avoid drawing text from the next page
                         canvas.clipRect(0, yOffset, pageWidth - 2 * padding, yOffset + pageHeight - 2 * padding)
                         staticLayout.draw(canvas)
-                        
+                       
                         canvas.restore()
                         pdfDocument.finishPage(page)
                         yOffset += (pageHeight - 2 * padding)
                     }
-                    
+                   
                     pdfDocument.writeTo(outputStream)
                 } finally {
                     pdfDocument.close()
                 }
             }
-            
+           
             } catch (e: Throwable) {
                 android.util.Log.e("EpubParser", "Failed to parse EPUB", e)
                 throw Exception(e.message, e)

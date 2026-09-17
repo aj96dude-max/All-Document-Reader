@@ -4,7 +4,6 @@ import {
   Text,
   View,
   FlatList,
-  ActivityIndicator,
   Alert,
   RefreshControl,
   StatusBar,
@@ -320,7 +319,7 @@ const ConvertedFilesScreen = () => {
   );
 };
 
-const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
+const getStyles = (colors: ColorPalette, _mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,

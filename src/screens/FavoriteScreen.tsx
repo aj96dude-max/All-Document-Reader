@@ -4,7 +4,6 @@ import {
   Text,
   View,
   FlatList,
-  ActivityIndicator,
   Alert,
   RefreshControl,
   StatusBar,
@@ -374,7 +373,7 @@ const FavoriteScreen = () => {
   );
 };
 
-const getStyles = (colors: ColorPalette, mode: 'light' | 'dark' | 'system') => StyleSheet.create({
+const getStyles = (colors: ColorPalette, _mode: 'light' | 'dark' | 'system') => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,

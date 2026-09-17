@@ -44,6 +44,8 @@ export const CONVERTIBLE_EXTENSIONS = [
   'go',
   'rs',
   'php',
+  'psd',
+  'svg',
 ];
 
 /**
@@ -78,7 +80,7 @@ function getCacheKey(uri: string, fileName: string): string {
   const baseName = fileName
     .replace(/\.[^/.]+$/, '')
     .replace(/[^a-zA-Z0-9_-]/g, '_');
-  return `${baseName}_${Math.abs(hash)}_v6`;
+  return `${baseName}_${Math.abs(hash)}_v9`;
 }
 
 /**

@@ -470,281 +470,168 @@ internal class PdfRenderingEngine(private val context: Context) {
         }
     }
 
-private suspend fun renderHtmlToPdf(
-    htmlContent: String?,
-    fileUri: Uri?,
-    outputUri: Uri,
-    landscape: Boolean = false
-) {
-    // Use landscape (swapped) dimensions for wide content like XLSX
-    val pageWidth = if (landscape) A4_HEIGHT else A4_WIDTH
-    val pageHeight = if (landscape) A4_WIDTH else A4_HEIGHT
+    private suspend fun renderHtmlToPdf(
+        htmlContent: String?,
+        fileUri: Uri?,
+        outputUri: Uri,
+        landscape: Boolean = false
+    ) {
+        val pageWidth = if (landscape) A4_HEIGHT else A4_WIDTH
+        val pageHeight = if (landscape) A4_WIDTH else A4_HEIGHT
 
-    withContext(Dispatchers.Main) {
-
-        try {
-            WebView.enableSlowWholeDocumentDraw()
-        } catch (e: Exception) {
-            Log.w(
-                TAG,
-                "WebView.enableSlowWholeDocumentDraw() failed",
-                e
-            )
-        }
-
-        suspendCancellableCoroutine<Unit> { continuation ->
-
-            val activity = context as? android.app.Activity
-                ?: throw IllegalStateException(
-                    "PdfRenderingEngine requires an Activity context."
-                )
-
-            val webView = WebView(activity)
-
-            val rootView =
-                activity.window.decorView.findViewById<android.view.ViewGroup>(
-                    android.R.id.content
-                )
-
-            // ==========================================
-            // MARGINS
-            // ==========================================
-
-            val leftMargin = 10f
-            val rightMargin = 10f
-            val topMargin = if (landscape) 20f else 50f
-            val bottomMargin = if (landscape) 20f else 50f
-
-            // ==========================================
-            // USABLE PDF AREA
-            // ==========================================
-
-            val contentWidth =
-                pageWidth - leftMargin - rightMargin
-
-            val contentHeight =
-                pageHeight - topMargin - bottomMargin
-
-            // WebView width is only the usable width.
-            val layoutParams = android.widget.FrameLayout.LayoutParams(
-                contentWidth.toInt(),
-                contentHeight.toInt()
-            )
-            webView.layoutParams = layoutParams
-            
-            // We intentionally do NOT add the WebView to the rootView. 
-            // It will exist entirely off-screen in memory for PDF rendering.
-
-            webView.settings.apply {
-                allowFileAccess = true
-                allowContentAccess = true
-                javaScriptEnabled = true  // Required for element boundary measurement
-                loadWithOverviewMode = true
-                useWideViewPort = true
+        withContext(Dispatchers.Main) {
+            try {
+                WebView.enableSlowWholeDocumentDraw()
+            } catch (e: Exception) {
+                Log.w(TAG, "WebView.enableSlowWholeDocumentDraw() failed", e)
             }
 
-            webView.webViewClient = object : WebViewClient() {
+            val result = kotlinx.coroutines.withTimeoutOrNull(30_000L) {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    val activity = context as? android.app.Activity
+                        ?: throw IllegalStateException("PdfRenderingEngine requires an Activity context.")
 
-                override fun onPageFinished(
-                    view: WebView,
-                    url: String
-                ) {
-                    super.onPageFinished(view, url)
+                    val rootGroup = activity.window.decorView.rootView as? android.view.ViewGroup
+                    val webView = WebView(activity)
+                    if (rootGroup != null) {
+                        val lp = android.widget.FrameLayout.LayoutParams(1, 1)
+                        rootGroup.addView(webView, lp)
+                        webView.alpha = 0.01f
+                    }
+                val leftMargin = 10f
+                val rightMargin = 10f
+                val topMargin = if (landscape) 20f else 50f
+                val bottomMargin = if (landscape) 20f else 50f
+                val contentWidth = pageWidth - leftMargin - rightMargin
+                val contentHeight = pageHeight - topMargin - bottomMargin
 
-                    view.postDelayed({
+                webView.layoutParams = android.widget.FrameLayout.LayoutParams(
+                    contentWidth.toInt(),
+                    contentHeight.toInt()
+                )
 
-                        try {
+                webView.settings.apply {
+                    allowFileAccess = true
+                    allowContentAccess = true
+                    javaScriptEnabled = true
+                    loadWithOverviewMode = true
+                    useWideViewPort = true
+                }
 
-                            // ==========================================
-                            // MEASURE HTML
-                            // ==========================================
+                fun complete(result: Result<Unit>) {
+                    if (!continuation.isActive) return
+                    if (rootGroup != null) {
+                        rootGroup.removeView(webView)
+                    }
+                    result.fold(
+                        onSuccess = { continuation.resume(Unit) },
+                        onFailure = { continuation.resumeWithException(it) }
+                    )
+                }
 
-                            val widthSpec =
-                                android.view.View.MeasureSpec.makeMeasureSpec(
+                webView.webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView, url: String) {
+                        super.onPageFinished(view, url)
+                        view.postDelayed({
+                            try {
+                                val widthSpec = android.view.View.MeasureSpec.makeMeasureSpec(
                                     contentWidth.toInt(),
                                     android.view.View.MeasureSpec.EXACTLY
                                 )
-
-                            val heightSpec =
-                                android.view.View.MeasureSpec.makeMeasureSpec(
+                                val heightSpec = android.view.View.MeasureSpec.makeMeasureSpec(
                                     0,
                                     android.view.View.MeasureSpec.UNSPECIFIED
                                 )
+                                view.measure(widthSpec, heightSpec)
+                                val totalContentHeight = view.measuredHeight.coerceAtLeast(1)
+                                view.layout(0, 0, contentWidth.toInt(), totalContentHeight)
 
-                            view.measure(
-                                widthSpec,
-                                heightSpec
-                            )
+                                view.evaluateJavascript(ELEMENT_BOUNDARY_JS) { jsResult ->
+                                    try {
+                                        val cleanedResult = jsResult?.trim()?.removeSurrounding("\"") ?: ""
+                                        val parts = cleanedResult.split("|")
+                                        val cssTotalHeight = parts.getOrNull(0)?.toFloatOrNull()
+                                            ?: totalContentHeight.toFloat()
+                                        val scale = if (cssTotalHeight > 0) {
+                                            totalContentHeight.toFloat() / cssTotalHeight
+                                        } else 1f
+                                        val boundariesStr = if (parts.size > 1) parts[1] else ""
+                                        val boundaries = parseElementBoundaries(boundariesStr, scale)
 
-                            val totalContentHeight =
-                                view.measuredHeight
-
-                            view.layout(
-                                0,
-                                0,
-                                contentWidth.toInt(),
-                                totalContentHeight
-                            )
-
-                            // ==========================================
-                            // MEASURE ELEMENT BOUNDARIES VIA JS
-                            // This detects where block elements (paragraphs,
-                            // table rows, headings, etc.) are positioned,
-                            // so we can avoid cutting them at page breaks.
-                            // ==========================================
-
-                            view.evaluateJavascript(ELEMENT_BOUNDARY_JS) { jsResult ->
-
-                                try {
-
-                                    val cleanedResult = jsResult?.trim()?.removeSurrounding("\"") ?: ""
-                                    val parts = cleanedResult.split("|")
-                                    val cssTotalHeight = parts.getOrNull(0)?.toFloatOrNull() ?: totalContentHeight.toFloat()
-                                    
-                                    // Calculate scale between Android View pixels and JS CSS pixels
-                                    val scale = if (cssTotalHeight > 0) totalContentHeight.toFloat() / cssTotalHeight else 1f
-                                    
-                                    val boundariesStr = if (parts.size > 1) parts[1] else ""
-                                    val boundaries = parseElementBoundaries(boundariesStr, scale)
-
-                                    // ==========================================
-                                    // CREATE PDF WITH SMART PAGINATION
-                                    // ==========================================
-
-                                    val pdfDocument = PdfDocument()
-
-                                    val pageInfo =
-                                        PdfDocument.PageInfo.Builder(
-                                            pageWidth,
-                                            pageHeight,
-                                            1
+                                        val pdfDocument = PdfDocument()
+                                        val pageInfo = PdfDocument.PageInfo.Builder(
+                                            pageWidth, pageHeight, 1
                                         ).create()
+                                        val pageContentHeight = contentHeight.toInt().coerceAtLeast(1)
+                                        var contentOffset = 0
+                                        var pageGuard = 0
 
-                                    val pageContentHeight =
-                                        contentHeight.toInt()
-
-                                    var contentOffset = 0
-
-                                    while (
-                                        contentOffset < totalContentHeight
-                                    ) {
-
-                                        // Find a safe break point that avoids
-                                        // cutting through any block element.
-                                        val idealBottom =
-                                            contentOffset + pageContentHeight
-
-                                        val safeBottom =
-                                            if (idealBottom >= totalContentHeight) {
-                                                // Last page — no adjustment needed
-                                                totalContentHeight
-                                            } else if (boundaries.isEmpty()) {
-                                                // No elements detected — fallback
-                                                idealBottom
-                                            } else {
-                                                findSafeBreakPoint(
-                                                    contentOffset,
-                                                    idealBottom,
-                                                    boundaries
-                                                )
+                                        while (contentOffset < totalContentHeight && pageGuard++ < 400) {
+                                            val idealBottom = contentOffset + pageContentHeight
+                                            val safeBottom = when {
+                                                idealBottom >= totalContentHeight -> totalContentHeight
+                                                boundaries.isEmpty() -> idealBottom
+                                                else -> findSafeBreakPoint(contentOffset, idealBottom, boundaries)
                                             }
-
-                                        val page =
-                                            pdfDocument.startPage(pageInfo)
-
-                                        val canvas = page.canvas
-
-                                        canvas.save()
-
-                                        // ======================================
-                                        // POSITION HTML INSIDE ALL 4 MARGINS
-                                        // ======================================
-
-                                        canvas.translate(
-                                            leftMargin,
-                                            topMargin - contentOffset
-                                        )
-
-                                        // ======================================
-                                        // CLIP TO THIS PAGE'S CONTENT SLICE
-                                        // Clip to safeBottom. This ensures that
-                                        // any element straddling the page boundary
-                                        // (which safeBottom avoided) is completely
-                                        // excluded from this page, leaving whitespace
-                                        // instead of a horizontally cut line.
-                                        // ======================================
-
-                                        canvas.clipRect(
-                                            0f,
-                                            contentOffset.toFloat(),
-                                            contentWidth,
-                                            safeBottom.toFloat()
-                                        )
-
-                                        // Draw HTML
-                                        view.draw(canvas)
-
-                                        canvas.restore()
-
-                                        pdfDocument.finishPage(page)
-
-                                        // Advance to the safe break point
-                                        // (may be less than pageContentHeight
-                                        // to avoid cutting an element)
-                                        contentOffset = safeBottom
-                                    }
-
-                                    // ==========================================
-                                    // WRITE PDF
-                                    // ==========================================
-
-                                    val outputStream =
-                                        context.contentResolver
-                                            .openOutputStream(outputUri)
-                                            ?: throw IllegalArgumentException(
-                                                "Could not open OutputStream for $outputUri"
+                                            val page = pdfDocument.startPage(pageInfo)
+                                            val canvas = page.canvas
+                                            canvas.save()
+                                            canvas.translate(leftMargin, topMargin - contentOffset)
+                                            canvas.clipRect(
+                                                0f,
+                                                contentOffset.toFloat(),
+                                                contentWidth,
+                                                safeBottom.toFloat()
                                             )
+                                            view.draw(canvas)
+                                            canvas.restore()
+                                            pdfDocument.finishPage(page)
+                                            contentOffset = if (safeBottom <= contentOffset) {
+                                                contentOffset + pageContentHeight
+                                            } else {
+                                                safeBottom
+                                            }
+                                        }
 
-                                    outputStream.use {
-                                        pdfDocument.writeTo(it)
+                                        val outputStream = context.contentResolver.openOutputStream(outputUri)
+                                            ?: throw IllegalArgumentException("Could not open OutputStream for $outputUri")
+                                        outputStream.use { pdfDocument.writeTo(it) }
+                                        pdfDocument.close()
+                                        complete(Result.success(Unit))
+                                    } catch (e: Exception) {
+                                        complete(Result.failure(e))
                                     }
-
-                                    pdfDocument.close()
-
-                                    continuation.resume(Unit)
-
-                                } catch (e: Exception) {
-
-                                    continuation.resumeWithException(e)
                                 }
+                            } catch (e: Exception) {
+                                complete(Result.failure(e))
                             }
+                        }, 1500)
+                    }
+                }
 
-                        } catch (e: Exception) {
+                if (fileUri != null) {
+                    webView.loadUrl(fileUri.toString())
+                } else {
+                    webView.loadDataWithBaseURL(
+                        null,
+                        htmlContent ?: "",
+                        "text/html",
+                        "UTF-8",
+                        null
+                    )
+                }
 
-                            continuation.resumeWithException(e)
+                    continuation.invokeOnCancellation {
+                        if (rootGroup != null) {
+                            rootGroup.removeView(webView)
                         }
-
-                    }, 1500)
+                        webView.destroy()
+                    }
                 }
             }
-
-            if (fileUri != null) {
-                webView.loadUrl(fileUri.toString())
-            } else {
-                webView.loadDataWithBaseURL(
-                    null,
-                    htmlContent ?: "",
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
-            }
-
-            continuation.invokeOnCancellation {
-                webView.destroy()
+            if (result == null) {
+                throw java.util.concurrent.TimeoutException("PDF rendering timed out after 30 seconds")
             }
         }
     }
-}
-
 }

@@ -22,7 +22,13 @@ class XlsParser : DocumentParser {
             htmlBuilder.append("h2 { font-size: 12px; margin-top: 14px; margin-bottom: 6px; color: #333; }")
             htmlBuilder.append("</style></head><body>")
 
-            context.contentResolver.openInputStream(inputUri)?.use { stream ->
+            val tempFile = java.io.File(context.cacheDir, "xls_src_${System.currentTimeMillis()}.xls")
+            try {
+                context.contentResolver.openInputStream(inputUri)?.use { stream ->
+                    java.io.FileOutputStream(tempFile).use { output -> stream.copyTo(output) }
+                } ?: throw IllegalArgumentException("Could not open InputStream for $inputUri")
+
+                java.io.FileInputStream(tempFile).use { stream ->
                 val workbook = HSSFWorkbook(stream)
                 val sheetCount = workbook.numberOfSheets
                 
@@ -83,6 +89,9 @@ class XlsParser : DocumentParser {
                     htmlBuilder.append("</table>")
                 }
                 workbook.close()
+                }
+            } finally {
+                tempFile.delete()
             }
             
             htmlBuilder.append("</body></html>")

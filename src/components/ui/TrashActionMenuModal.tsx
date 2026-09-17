@@ -4,7 +4,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Image,
   Modal,
   TouchableWithoutFeedback,
   Animated,

@@ -1,26 +1,21 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 import ChevronBackwardIcon from '../../../Assets/svgicons/chevron_backward.svg';
 import ShareIcon from '../../../Assets/svgicons/share.svg';
-import PdfIcon from '../../../Assets/svgicons/picture_as_pdf.svg';
 import { useTheme } from '../../theme/ThemeContext';
 import { ColorPalette } from '../../theme/colors';
 
 interface DocumentHeaderProps {
   title: string;
-  isPdf?: boolean;
   onBack: () => void;
   onShare: () => void;
-  onConvert?: () => void;
 }
 
 const DocumentHeader: React.FC<DocumentHeaderProps> = ({
   title,
-  isPdf = true,
   onBack,
   onShare,
-  onConvert,
 }) => {
   const { colors } = useTheme();
   const styles = React.useMemo(() => getStyles(colors), [colors]);

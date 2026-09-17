@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 import BorderColorIcon from '../../../Assets/svgicons/border_color.svg';
 import HeartMinusIcon from '../../../Assets/svgicons/favorite_active.svg';

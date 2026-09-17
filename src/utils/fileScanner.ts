@@ -18,7 +18,7 @@ const isValidType = (ext: string, requestedType: string) => {
     return [
       'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'epub', 'rtf', 'md', 'tex',
       'csv', 'tsv', 'json', 'xml',
-      'jpg', 'png', 'webp', 'gif', 'bmp',
+      'jpg', 'png', 'webp', 'gif', 'bmp', 'psd',
       'java', 'kt', 'py', 'c', 'cpp', 'html', 'js', 'css', 'yaml', 'yml', 'sh', 'swift', 'rb', 'go', 'rs', 'php'
     ].includes(ext);
   }

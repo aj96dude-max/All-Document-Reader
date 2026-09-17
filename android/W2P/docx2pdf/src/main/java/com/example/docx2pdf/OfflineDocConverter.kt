@@ -62,7 +62,9 @@ object OfflineDocConverterImpl : OfflineDocConverter {
             }
             
             Result.success(true)
-        } catch (e: Exception) {
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Throwable) {
             e.printStackTrace()
             Result.failure(e)
         }
@@ -76,7 +78,7 @@ object OfflineDocConverterImpl : OfflineDocConverter {
             val parser = DocumentParserFactory.createParser(context, inputUri)
             val state = parser.parse(context, inputUri)
             Result.success(state)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             e.printStackTrace()
             Result.failure(e)
         }

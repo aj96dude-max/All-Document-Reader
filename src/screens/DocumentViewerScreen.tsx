@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, ScannedFile } from '../types/types';
 import { renameFile, shareFile } from '../services/FileScanner';
-import { moveToTrash } from '../services/TrashService';
 import {
   isFavorite as checkIsFavorite,
   toggleFavorite as toggleFavoriteStorage,

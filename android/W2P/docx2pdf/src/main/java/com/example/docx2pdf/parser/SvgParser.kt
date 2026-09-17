@@ -51,11 +51,7 @@ class SvgParser : DocumentParser {
                 }
                 bitmap.recycle()
                 
-                val outputUri = androidx.core.content.FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    tempFile
-                )
+                val outputUri = android.net.Uri.fromFile(tempFile)
                 
                 UnifiedDocumentState.ImageState(outputUri)
             } ?: throw IllegalArgumentException("Could not open InputStream for $inputUri")

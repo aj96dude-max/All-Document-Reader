@@ -58,15 +58,10 @@ dependencies {
     // Mammoth for offline DOCX to HTML conversion
     implementation("org.zwobble.mammoth:mammoth:1.4.0")
 
-    // Apache POI for legacy .doc and .ppt formats
+    // Apache POI for legacy .doc, .ppt (OLE), and .xls. Avoid poi-ooxml:
+    // XMLSlideShow depends on java.awt, which Android does not provide.
     implementation("org.apache.poi:poi:5.2.3")
     implementation("org.apache.poi:poi-scratchpad:5.2.3")
-    
-    // Apache POI OOXML for .pptx traversal
-    implementation("org.apache.poi:poi-ooxml:5.2.3") {
-        exclude(group = "stax", module = "stax-api")
-        exclude(group = "org.apache.xmlbeans", module = "xmlbeans")
-    }
 
     // AndroidSVG for native .svg rendering
     implementation("com.caverock:androidsvg-aar:1.4")

@@ -12,7 +12,7 @@ import {
   rateApp,
 } from '../services/SettingsService';
 import { clearConversionCache } from '../services/DocConverterService';
-import { useTheme, ThemeMode } from '../theme/ThemeContext';
+import { useTheme } from '../theme/ThemeContext';
 import { ColorPalette } from '../theme/colors';
 
 import LightIcon from '../../Assets/svgicons/light.svg';
@@ -72,7 +72,7 @@ const SettingScreen = () => {
     try {
       await clearConversionCache();
       Alert.alert('Success', 'Document conversion cache cleared successfully.');
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'Failed to clear cache.');
     }
   };

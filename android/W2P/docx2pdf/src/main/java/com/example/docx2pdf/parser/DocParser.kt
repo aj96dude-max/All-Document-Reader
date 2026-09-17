@@ -23,10 +23,13 @@ class DocParser : DocumentParser {
             val resolver = context.contentResolver
             var inputStream: InputStream? = null
             var extractor: WordExtractor? = null
+            val tempFile = java.io.File(context.cacheDir, "doc_src_${System.currentTimeMillis()}.doc")
             try {
-                inputStream = resolver.openInputStream(inputUri)
-                    ?: throw IllegalArgumentException("Could not open InputStream for $inputUri")
+                resolver.openInputStream(inputUri)?.use { input ->
+                    java.io.FileOutputStream(tempFile).use { output -> input.copyTo(output) }
+                } ?: throw IllegalArgumentException("Could not open InputStream for $inputUri")
 
+                inputStream = java.io.FileInputStream(tempFile)
                 extractor = WordExtractor(inputStream)
                 val text = extractor.text
 
@@ -66,6 +69,7 @@ class DocParser : DocumentParser {
             } finally {
                 extractor?.close()
                 inputStream?.close()
+                tempFile.delete()
             }
         }
         
